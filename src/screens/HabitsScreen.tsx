@@ -23,6 +23,7 @@ export const HabitsScreen: React.FC = () => {
     addHabit,
     updateHabit,
     deleteHabit,
+    toggleArchive,
     toggleRecord,
   } = useHabits();
 
@@ -259,6 +260,7 @@ export const HabitsScreen: React.FC = () => {
         onSave={addHabit}
         onUpdate={updateHabit}
         onDelete={deleteHabit}
+        onArchive={toggleArchive}
       />
 
       {/* Settings / Data Modal */}

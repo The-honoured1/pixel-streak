@@ -38,10 +38,12 @@ export function calculateHabitStats(habit: Habit): HabitStats {
   while (true) {
     const dStr = formatDate(checkDate);
     
-    // If it's a target day according to frequency, it MUST be completed
+    // If it's a target day according to frequency, it MUST be completed or frozen
     if (isTargetDay(habit, dStr)) {
       if (records[dStr] && records[dStr] > 0) {
         currentStreak++;
+      } else if (habit.freezeDays?.[dStr]) {
+        // Frozen day: skip transparently (doesn't add to streak, doesn't break it)
       } else {
         // Streak broken
         break;
@@ -73,6 +75,8 @@ export function calculateHabitStats(habit: Habit): HabitStats {
           if (tempStreak > longestStreak) {
             longestStreak = tempStreak;
           }
+        } else if (habit.freezeDays?.[dStr]) {
+          // Frozen day: skip transparently (doesn't reset streak)
         } else {
           tempStreak = 0;
         }

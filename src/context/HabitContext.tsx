@@ -10,6 +10,7 @@ import {
   clearAllHabitsFromStorage,
 } from '../services/storageService';
 import { getTodayString } from '../utils/dateUtils';
+import { QUICK_STARTERS } from '../constants/defaultHabits';
 
 interface HabitContextType {
   habits: Habit[];
@@ -22,10 +23,14 @@ interface HabitContextType {
   toggleArchive: (id: string) => Promise<void>;
   toggleRecord: (habitId: string, date: string, specificLevel?: number) => Promise<void>;
   quickToggleToday: (habitId: string) => Promise<void>;
+  reorderHabit: (habitId: string, direction: 'up' | 'down') => Promise<void>;
   exportData: () => Promise<string>;
   importData: (json: string) => Promise<{ success: boolean; error?: string }>;
   resetData: () => Promise<void>;
   clearAllData: () => Promise<void>;
+  loadStarterHabits: () => Promise<void>;
+  freezeDay: (habitId: string, date: string) => Promise<void>;
+  unfreezeDay: (habitId: string, date: string) => Promise<void>;
 }
 
 const HabitContext = createContext<HabitContextType | undefined>(undefined);
@@ -127,7 +132,6 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!habit) return;
 
     const currentLevel = habit.records[today] || 0;
-    // Toggle between 0 and 4 (fully completed)
     const nextLevel = currentLevel > 0 ? 0 : 4;
 
     const updated = habits.map(h => {
@@ -143,6 +147,27 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     await updateHabitsAndStore(updated);
     await triggerHaptic(nextLevel > 0 ? 'success' : 'light');
+  };
+
+  const reorderHabit = async (habitId: string, direction: 'up' | 'down') => {
+    const sorted = [...habits.filter(h => !h.archived)].sort((a, b) => a.order - b.order);
+    const idx = sorted.findIndex(h => h.id === habitId);
+    if (idx === -1) return;
+
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= sorted.length) return;
+
+    const aOrder = sorted[idx].order;
+    const bOrder = sorted[swapIdx].order;
+
+    const updated = habits.map(h => {
+      if (h.id === sorted[idx].id) return { ...h, order: bOrder };
+      if (h.id === sorted[swapIdx].id) return { ...h, order: aOrder };
+      return h;
+    });
+
+    await updateHabitsAndStore(updated);
+    await triggerHaptic('light');
   };
 
   const exportData = async (): Promise<string> => {
@@ -171,6 +196,46 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     await triggerHaptic('medium');
   };
 
+  const loadStarterHabits = async () => {
+    await clearAllHabitsFromStorage();
+    const starters: Habit[] = QUICK_STARTERS.map((s, idx) => ({
+      id: `habit-starter-${Date.now()}-${idx}`,
+      name: s.name,
+      description: '',
+      icon: s.icon,
+      palette: s.palette,
+      frequency: 'daily' as const,
+      category: 'General',
+      createdAt: new Date().toISOString(),
+      archived: false,
+      order: idx,
+      records: {},
+    }));
+    await saveHabitsToStorage(starters);
+    setHabits(starters);
+    await triggerHaptic('success');
+  };
+
+  const freezeDay = async (habitId: string, date: string) => {
+    const updated = habits.map(h => {
+      if (h.id !== habitId) return h;
+      return { ...h, freezeDays: { ...(h.freezeDays || {}), [date]: true as const } };
+    });
+    await updateHabitsAndStore(updated);
+    await triggerHaptic('light');
+  };
+
+  const unfreezeDay = async (habitId: string, date: string) => {
+    const updated = habits.map(h => {
+      if (h.id !== habitId) return h;
+      const fd = { ...(h.freezeDays || {}) };
+      delete fd[date];
+      return { ...h, freezeDays: fd };
+    });
+    await updateHabitsAndStore(updated);
+    await triggerHaptic('light');
+  };
+
   return (
     <HabitContext.Provider
       value={{
@@ -184,10 +249,14 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         toggleArchive,
         toggleRecord,
         quickToggleToday,
+        reorderHabit,
         exportData,
         importData,
         resetData,
         clearAllData,
+        loadStarterHabits,
+        freezeDay,
+        unfreezeDay,
       }}
     >
       {children}

@@ -30,6 +30,7 @@ export const HabitModal: React.FC<HabitModalProps> = ({
   onSave,
   onUpdate,
   onDelete,
+  onArchive,
 }) => {
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('fire');
@@ -84,6 +85,24 @@ export const HabitModal: React.FC<HabitModalProps> = ({
           style: 'destructive',
           onPress: () => {
             onDelete(habitToEdit.id);
+            onClose();
+          },
+        },
+      ]
+    );
+  };
+
+  const handleArchive = () => {
+    if (!habitToEdit || !onArchive) return;
+    Alert.alert(
+      'Archive Habit',
+      `Archive "${habitToEdit.name}"? You can unarchive it later from Settings.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Archive',
+          onPress: () => {
+            onArchive(habitToEdit.id);
             onClose();
           },
         },
@@ -192,6 +211,14 @@ export const HabitModal: React.FC<HabitModalProps> = ({
                 );
               })}
             </View>
+
+            {/* Archive button if editing */}
+            {habitToEdit && onArchive && (
+              <TouchableOpacity style={styles.archiveButton} onPress={handleArchive}>
+                <MaterialCommunityIcons name="archive-arrow-down-outline" size={18} color="#F97316" />
+                <Text style={styles.archiveText}>Archive this habit</Text>
+              </TouchableOpacity>
+            )}
 
             {/* Delete button if editing */}
             {habitToEdit && (
@@ -335,6 +362,19 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  archiveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 24,
+    paddingVertical: 12,
+  },
+  archiveText: {
+    color: '#F97316',
+    fontSize: 14,
+    fontWeight: '600',
   },
   deleteButton: {
     flexDirection: 'row',

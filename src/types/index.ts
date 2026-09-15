@@ -29,6 +29,11 @@ export interface Habit {
   archived: boolean;
   order: number;
   records: Record<string, number>; // date "YYYY-MM-DD" -> level (0 to 4)
+  freezeDays?: Record<string, true>; // date "YYYY-MM-DD" -> excused (streak freeze)
+  reminderEnabled?: boolean;
+  reminderHour?: number; // 0–23
+  reminderMinute?: number; // 0–59
+  reminderNotificationId?: string; // identifier returned by expo-notifications
 }
 
 export interface HabitStats {

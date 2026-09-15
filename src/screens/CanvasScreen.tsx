@@ -77,8 +77,20 @@ export const CanvasScreen: React.FC = () => {
       if (habit) {
         setDayDetailsModal({ habit, date, level });
       }
-    } else if (activeHabits.length > 0) {
-      setDayDetailsModal({ habit: activeHabits[0], date, level });
+    } else {
+      // Find the habit with the highest recorded level on this date
+      let bestHabit: Habit | null = null;
+      let bestLevel = 0;
+      activeHabits.forEach(h => {
+        const lvl = h.records[date] ?? 0;
+        if (lvl > bestLevel) {
+          bestLevel = lvl;
+          bestHabit = h;
+        }
+      });
+      if (bestHabit !== null) {
+        setDayDetailsModal({ habit: bestHabit, date, level: bestLevel });
+      }
     }
   };
 
@@ -286,6 +298,7 @@ export const CanvasScreen: React.FC = () => {
               <Text style={styles.metricNumber}>
                 {activeHabits.length}
               </Text>
+              <Text style={styles.metricLabel}>Habits Tracked</Text>
             </View>
           </View>
         </View>
