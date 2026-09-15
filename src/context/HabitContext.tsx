@@ -7,6 +7,7 @@ import {
   exportDataJson,
   importDataJson,
   resetToDefaultData,
+  clearAllHabitsFromStorage,
 } from '../services/storageService';
 import { getTodayString } from '../utils/dateUtils';
 
@@ -24,6 +25,7 @@ interface HabitContextType {
   exportData: () => Promise<string>;
   importData: (json: string) => Promise<{ success: boolean; error?: string }>;
   resetData: () => Promise<void>;
+  clearAllData: () => Promise<void>;
 }
 
 const HabitContext = createContext<HabitContextType | undefined>(undefined);
@@ -163,6 +165,12 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     await triggerHaptic('medium');
   };
 
+  const clearAllData = async () => {
+    await clearAllHabitsFromStorage();
+    setHabits([]);
+    await triggerHaptic('medium');
+  };
+
   return (
     <HabitContext.Provider
       value={{
@@ -179,6 +187,7 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         exportData,
         importData,
         resetData,
+        clearAllData,
       }}
     >
       {children}

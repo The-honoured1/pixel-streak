@@ -125,3 +125,34 @@ export function getDaysCountForSpan(span: '30days' | '90days' | '180days' | 'yea
     default: return 20;
   }
 }
+
+export interface DayStripItem {
+  date: string;
+  dayLabel: string;
+  dayNumber: number;
+  isToday: boolean;
+  isFuture: boolean;
+}
+
+const SHORT_DAY_NAMES = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+export function getLastNDays(n: number = 7): DayStripItem[] {
+  const result: DayStripItem[] = [];
+  const today = new Date();
+  const todayStr = formatDate(today);
+
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const dateStr = formatDate(d);
+    result.push({
+      date: dateStr,
+      dayLabel: SHORT_DAY_NAMES[d.getDay()],
+      dayNumber: d.getDate(),
+      isToday: dateStr === todayStr,
+      isFuture: dateStr > todayStr,
+    });
+  }
+
+  return result;
+}

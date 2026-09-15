@@ -1,123 +1,151 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Habit } from '../types';
 import { PALETTES } from '../constants/palettes';
 import { calculateHabitStats } from '../utils/streakCalculator';
-import { getTodayString } from '../utils/dateUtils';
-import { PixelGrid } from './PixelGrid';
+import { getLastNDays } from '../utils/dateUtils';
 import { FlameStreak } from './FlameStreak';
 
 interface HabitCardProps {
   habit: Habit;
-  onQuickCheckIn: (habitId: string) => void;
+  selectedDate: string;
+  onToggleDate: (habitId: string, date: string) => void;
   onEdit: (habit: Habit) => void;
-  onDayPress: (habit: Habit, date: string, level: number) => void;
 }
 
 export const HabitCard: React.FC<HabitCardProps> = ({
   habit,
-  onQuickCheckIn,
+  selectedDate,
+  onToggleDate,
   onEdit,
-  onDayPress,
 }) => {
   const palette = PALETTES[habit.palette] || PALETTES.emerald;
   const stats = calculateHabitStats(habit);
-  const today = getTodayString();
-  const isDoneToday = (habit.records[today] || 0) > 0;
+  const isDoneOnSelectedDate = (habit.records[selectedDate] || 0) > 0;
+  const last7Days = getLastNDays(7);
+
+  // Bounce scale animation for check button
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handleToggle = () => {
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.85,
+        duration: 70,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 4,
+        tension: 120,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    onToggleDate(habit.id, selectedDate);
+  };
 
   return (
     <View style={styles.card}>
-      {/* Header Row */}
-      <View style={styles.headerRow}>
-        <View style={styles.leftInfo}>
-          <View style={[styles.iconContainer, { backgroundColor: `${palette.accent}15`, borderColor: `${palette.accent}30` }]}>
+      {/* Top Row: Icon, Title & Streak, and Big Check Button */}
+      <View style={styles.topRow}>
+        <TouchableOpacity
+          style={styles.cardLeft}
+          onPress={() => onEdit(habit)}
+          activeOpacity={0.7}
+        >
+          <View
+            style={[
+              styles.iconBox,
+              {
+                backgroundColor: `${palette.accent}18`,
+                borderColor: `${palette.accent}35`,
+              },
+            ]}
+          >
             <MaterialCommunityIcons
-              name={(habit.icon as any) || 'check-circle-outline'}
-              size={20}
+              name={(habit.icon as any) || 'fire'}
+              size={24}
               color={palette.accent}
             />
           </View>
+
           <View style={styles.titleInfo}>
-            <View style={styles.titleWithBadge}>
-              <Text style={styles.habitName} numberOfLines={1}>
-                {habit.name}
-              </Text>
-            </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaText}>
-                {habit.category || 'General'} • {habit.frequency}
-              </Text>
+            <Text style={styles.habitName} numberOfLines={1}>
+              {habit.name}
+            </Text>
+            <View style={styles.streakRow}>
+              <FlameStreak streak={stats.currentStreak} size="small" />
+              {stats.longestStreak > 0 && (
+                <Text style={styles.bestStreakText}>Best: {stats.longestStreak}d</Text>
+              )}
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
 
-        {/* Quick Check-in Button & Edit */}
-        <View style={styles.actionRow}>
-          <FlameStreak streak={stats.currentStreak} size="small" />
-          
+        {/* Big Satisfying Check Button */}
+        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
           <TouchableOpacity
             style={[
-              styles.checkInButton,
-              isDoneToday && { backgroundColor: palette.accent, borderColor: palette.accent },
+              styles.checkButton,
+              isDoneOnSelectedDate
+                ? { backgroundColor: palette.accent, borderColor: palette.accent }
+                : styles.checkButtonEmpty,
             ]}
-            onPress={() => onQuickCheckIn(habit.id)}
-            activeOpacity={0.7}
+            onPress={handleToggle}
+            activeOpacity={0.8}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <MaterialCommunityIcons
-              name={isDoneToday ? 'check-bold' : 'plus'}
-              size={18}
-              color={isDoneToday ? '#0d1117' : '#8b949e'}
-            />
+            {isDoneOnSelectedDate ? (
+              <MaterialCommunityIcons name="check-bold" size={20} color="#0B0F19" />
+            ) : (
+              <View style={[styles.emptyInnerDot, { borderColor: `${palette.accent}50` }]} />
+            )}
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.moreButton}
-            onPress={() => onEdit(habit)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <MaterialCommunityIcons name="dots-vertical" size={18} color="#8b949e" />
-          </TouchableOpacity>
-        </View>
+        </Animated.View>
       </View>
 
-      {/* Description if present */}
-      {!!habit.description && (
-        <Text style={styles.description} numberOfLines={1}>
-          {habit.description}
-        </Text>
-      )}
+      {/* Week Dots Strip (Last 7 Days) */}
+      <View style={styles.weekStrip}>
+        {last7Days.map(item => {
+          const isDone = (habit.records[item.date] || 0) > 0;
+          const isSelected = item.date === selectedDate;
 
-      {/* Stats summary bar */}
-      <View style={styles.statsSummaryRow}>
-        <View style={styles.statPill}>
-          <Text style={styles.statPillLabel}>Best</Text>
-          <Text style={styles.statPillValue}>{stats.longestStreak}d</Text>
-        </View>
-        <View style={styles.statPill}>
-          <Text style={styles.statPillLabel}>Total</Text>
-          <Text style={styles.statPillValue}>{stats.totalCompletions}</Text>
-        </View>
-        <View style={styles.statPill}>
-          <Text style={styles.statPillLabel}>30d Rate</Text>
-          <Text style={[styles.statPillValue, { color: palette.accent }]}>
-            {stats.completionRate}%
-          </Text>
-        </View>
-      </View>
-
-      {/* Pixel Heatmap Matrix */}
-      <View style={styles.matrixContainer}>
-        <PixelGrid
-          records={habit.records}
-          paletteKey={habit.palette}
-          span="90days"
-          squareSize={12}
-          gap={3}
-          showLegend={false}
-          showDayLabels={true}
-          onDayPress={(date, level) => onDayPress(habit, date, level)}
-        />
+          return (
+            <TouchableOpacity
+              key={item.date}
+              style={[
+                styles.weekDotItem,
+                isSelected && styles.weekDotItemSelected,
+              ]}
+              onPress={() => onToggleDate(habit.id, item.date)}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.weekDayLabel,
+                  isSelected && { color: '#FFFFFF', fontWeight: '800' },
+                ]}
+              >
+                {item.dayLabel}
+              </Text>
+              <View
+                style={[
+                  styles.dotSquare,
+                  isDone
+                    ? { backgroundColor: palette.accent }
+                    : styles.dotSquareEmpty,
+                  isSelected && !isDone && [styles.dotSquareSelected, { borderColor: palette.accent }],
+                ]}
+              >
+                {isDone && (
+                  <MaterialCommunityIcons name="check" size={10} color="#0B0F19" />
+                )}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );
@@ -125,106 +153,104 @@ export const HabitCard: React.FC<HabitCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#161b22',
-    borderRadius: 14,
+    backgroundColor: '#121624',
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: '#30363d',
-    padding: 14,
+    borderColor: 'rgba(255, 255, 255, 0.07)',
+    padding: 16,
     marginBottom: 14,
   },
-  headerRow: {
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  leftInfo: {
+  cardLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    marginRight: 8,
+    marginRight: 12,
   },
-  iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 9,
-    borderWidth: 1,
+  iconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: 14,
   },
   titleInfo: {
     flex: 1,
   },
-  titleWithBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   habitName: {
-    color: '#f0f6fc',
-    fontSize: 16,
+    color: '#FFFFFF',
+    fontSize: 17,
     fontWeight: '700',
+    letterSpacing: -0.3,
   },
-  metaRow: {
+  streakRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
-  },
-  metaText: {
-    color: '#8b949e',
-    fontSize: 12,
-  },
-  description: {
-    color: '#8b949e',
-    fontSize: 12,
-    marginTop: 6,
-    lineHeight: 16,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    marginTop: 5,
     gap: 8,
   },
-  checkInButton: {
-    width: 32,
-    height: 32,
+  bestStreakText: {
+    color: '#64748B',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  checkButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+  },
+  checkButtonEmpty: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  emptyInnerDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2,
+  },
+  weekStrip: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  weekDotItem: {
+    alignItems: 'center',
+    flex: 1,
+    paddingVertical: 2,
+  },
+  weekDotItemSelected: {
     borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: '#30363d',
-    backgroundColor: '#21262d',
+  },
+  weekDayLabel: {
+    color: '#64748B',
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  dotSquare: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  moreButton: {
-    padding: 4,
+  dotSquareEmpty: {
+    backgroundColor: '#19202F',
   },
-  statsSummaryRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 10,
-    marginBottom: 6,
-  },
-  statPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0d1117',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 0.5,
-    borderColor: '#30363d',
-    gap: 4,
-  },
-  statPillLabel: {
-    color: '#8b949e',
-    fontSize: 10,
-    fontWeight: '500',
-  },
-  statPillValue: {
-    color: '#c9d1d9',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  matrixContainer: {
-    marginTop: 6,
+  dotSquareSelected: {
+    borderWidth: 1.5,
   },
 });

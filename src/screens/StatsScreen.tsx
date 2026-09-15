@@ -35,7 +35,6 @@ export const StatsScreen: React.FC = () => {
       };
     });
 
-    // Sort by current streak descending
     habitRanks.sort((a, b) => b.stats.currentStreak - a.stats.currentStreak);
 
     const avgConsistency = activeHabits.length > 0
@@ -89,7 +88,7 @@ export const StatsScreen: React.FC = () => {
       },
       {
         id: 'habit-former',
-        title: '21-Day Habit Former',
+        title: '21-Day Routine',
         description: 'Forge an unbreakable routine with 21 consecutive days',
         icon: 'lightning-bolt',
         target: 21,
@@ -99,7 +98,7 @@ export const StatsScreen: React.FC = () => {
       {
         id: 'century-club',
         title: 'Century 100',
-        description: 'Paint 100 total pixels across all habits',
+        description: 'Complete 100 total pixels across all habits',
         icon: 'trophy-award',
         target: 100,
         current: analytics.totalCompletionsAll,
@@ -117,15 +116,17 @@ export const StatsScreen: React.FC = () => {
     ];
   }, [analytics]);
 
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerSubtitle}>PERFORMANCE</Text>
-          <Text style={styles.headerTitle}>Analytics & Stats</Text>
+          <View style={styles.headerTag}>
+            <Text style={styles.headerTagText}>PERFORMANCE</Text>
+          </View>
+          <Text style={styles.headerTitle}>Analytics</Text>
         </View>
       </View>
 
@@ -137,12 +138,16 @@ export const StatsScreen: React.FC = () => {
         {/* KPI Cards Row */}
         <View style={styles.kpiRow}>
           <View style={styles.kpiCard}>
-            <MaterialCommunityIcons name="fire" size={24} color="#ff7b00" />
+            <View style={[styles.kpiIcon, { backgroundColor: 'rgba(249, 115, 22, 0.15)' }]}>
+              <MaterialCommunityIcons name="fire" size={22} color="#F97316" />
+            </View>
             <Text style={styles.kpiValue}>{analytics.maxCurrentStreak}d</Text>
             <Text style={styles.kpiLabel}>Current Best Streak</Text>
           </View>
           <View style={styles.kpiCard}>
-            <MaterialCommunityIcons name="trophy" size={24} color="#facc15" />
+            <View style={[styles.kpiIcon, { backgroundColor: 'rgba(250, 204, 21, 0.15)' }]}>
+              <MaterialCommunityIcons name="trophy" size={22} color="#FACC15" />
+            </View>
             <Text style={styles.kpiValue}>{analytics.maxEverStreak}d</Text>
             <Text style={styles.kpiLabel}>Longest Streak</Text>
           </View>
@@ -150,32 +155,46 @@ export const StatsScreen: React.FC = () => {
 
         <View style={styles.kpiRow}>
           <View style={styles.kpiCard}>
-            <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={24} color="#38bdf8" />
+            <View style={[styles.kpiIcon, { backgroundColor: 'rgba(56, 189, 248, 0.15)' }]}>
+              <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={22} color="#38BDF8" />
+            </View>
             <Text style={styles.kpiValue}>{analytics.totalCompletionsAll}</Text>
             <Text style={styles.kpiLabel}>Total Check-ins</Text>
           </View>
           <View style={styles.kpiCard}>
-            <MaterialCommunityIcons name="chart-bell-curve" size={24} color="#39d353" />
+            <View style={[styles.kpiIcon, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+              <MaterialCommunityIcons name="chart-bell-curve" size={22} color="#10B981" />
+            </View>
             <Text style={styles.kpiValue}>{analytics.avgConsistency}%</Text>
-            <Text style={styles.kpiLabel}>30-Day Consistency</Text>
+            <Text style={styles.kpiLabel}>30-Day Rate</Text>
           </View>
         </View>
 
         {/* Day of Week Consistency Histogram */}
         <View style={styles.sectionCard}>
-          <Text style={styles.cardTitle}>Weekly Activity Breakdown</Text>
-          <Text style={styles.cardSubtitle}>Total habit check-ins by day of the week</Text>
+          <Text style={styles.cardTitle}>Weekly Activity Pattern</Text>
+          <Text style={styles.cardSubtitle}>Check-ins by day of the week</Text>
 
           <View style={styles.chartContainer}>
             {analytics.dayDistribution.map((count, idx) => {
               const heightPercent = Math.max(8, Math.round((count / analytics.maxDayCount) * 100));
+              const isToday = new Date().getDay() === idx;
+
               return (
                 <View key={idx} style={styles.chartCol}>
                   <Text style={styles.chartColValue}>{count}</Text>
                   <View style={styles.barTrack}>
-                    <View style={[styles.barFill, { height: `${heightPercent}%` }]} />
+                    <View
+                      style={[
+                        styles.barFill,
+                        { height: `${heightPercent}%` },
+                        isToday && { backgroundColor: '#10B981' },
+                      ]}
+                    />
                   </View>
-                  <Text style={styles.chartDayLabel}>{dayNames[idx]}</Text>
+                  <Text style={[styles.chartDayLabel, isToday && { color: '#FFFFFF', fontWeight: '800' }]}>
+                    {dayNames[idx]}
+                  </Text>
                 </View>
               );
             })}
@@ -183,49 +202,51 @@ export const StatsScreen: React.FC = () => {
         </View>
 
         {/* Streaks Leaderboard */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.cardTitle}>Streak Leaderboard</Text>
-          <Text style={styles.cardSubtitle}>Your habits ranked by active consistency</Text>
+        {activeHabits.length > 0 && (
+          <View style={styles.sectionCard}>
+            <Text style={styles.cardTitle}>Streak Leaderboard</Text>
+            <Text style={styles.cardSubtitle}>Active habits ranked by consecutive consistency</Text>
 
-          <View style={styles.leaderboardList}>
-            {analytics.habitRanks.map((item, index) => {
-              const pal = PALETTES[item.habit.palette] || PALETTES.emerald;
-              const tier = getStreakTier(item.stats.currentStreak);
+            <View style={styles.leaderboardList}>
+              {analytics.habitRanks.map((item, index) => {
+                const pal = PALETTES[item.habit.palette] || PALETTES.emerald;
+                const tier = getStreakTier(item.stats.currentStreak);
 
-              return (
-                <View key={item.habit.id} style={styles.leaderboardRow}>
-                  <Text style={styles.rankNum}>#{index + 1}</Text>
-                  <View style={[styles.habitIconMini, { backgroundColor: `${pal.accent}15` }]}>
-                    <MaterialCommunityIcons
-                      name={(item.habit.icon as any) || 'check'}
-                      size={16}
-                      color={pal.accent}
-                    />
+                return (
+                  <View key={item.habit.id} style={styles.leaderboardRow}>
+                    <Text style={styles.rankNum}>#{index + 1}</Text>
+                    <View style={[styles.habitIconMini, { backgroundColor: `${pal.accent}18` }]}>
+                      <MaterialCommunityIcons
+                        name={(item.habit.icon as any) || 'check'}
+                        size={16}
+                        color={pal.accent}
+                      />
+                    </View>
+                    <View style={styles.habitInfoMini}>
+                      <Text style={styles.habitNameMini} numberOfLines={1}>
+                        {item.habit.name}
+                      </Text>
+                      <Text style={styles.habitMetaMini}>
+                        Best: {item.stats.longestStreak}d • {item.stats.totalCompletions} check-ins
+                      </Text>
+                    </View>
+                    <View style={[styles.streakBadgeMini, { backgroundColor: `${tier.color}18` }]}>
+                      <MaterialCommunityIcons name="fire" size={15} color={tier.color} />
+                      <Text style={[styles.streakTextMini, { color: tier.color }]}>
+                        {item.stats.currentStreak}d
+                      </Text>
+                    </View>
                   </View>
-                  <View style={styles.habitInfoMini}>
-                    <Text style={styles.habitNameMini} numberOfLines={1}>
-                      {item.habit.name}
-                    </Text>
-                    <Text style={styles.habitMetaMini}>
-                      Best: {item.stats.longestStreak}d • Total: {item.stats.totalCompletions}
-                    </Text>
-                  </View>
-                  <View style={styles.streakBadgeMini}>
-                    <MaterialCommunityIcons name="fire" size={16} color={tier.color} />
-                    <Text style={[styles.streakTextMini, { color: tier.color }]}>
-                      {item.stats.currentStreak}d
-                    </Text>
-                  </View>
-                </View>
-              );
-            })}
+                );
+              })}
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Pixel Milestones */}
         <View style={styles.sectionCard}>
           <Text style={styles.cardTitle}>Pixel Achievements</Text>
-          <Text style={styles.cardSubtitle}>Milestones forged through consistency</Text>
+          <Text style={styles.cardSubtitle}>Unlock badges as your habits compound</Text>
 
           <View style={styles.milestonesList}>
             {milestones.map(m => {
@@ -248,7 +269,7 @@ export const StatsScreen: React.FC = () => {
                     <MaterialCommunityIcons
                       name={(m.icon as any) || 'star'}
                       size={22}
-                      color={m.unlocked ? '#facc15' : '#6e7681'}
+                      color={m.unlocked ? '#FACC15' : '#64748B'}
                     />
                   </View>
                   <View style={styles.milestoneContent}>
@@ -268,7 +289,7 @@ export const StatsScreen: React.FC = () => {
                       )}
                     </View>
                     <Text style={styles.milestoneDesc}>{m.description}</Text>
-                    
+
                     {!m.unlocked && (
                       <View style={styles.milestoneProgress}>
                         <View style={styles.milestoneTrack}>
@@ -300,23 +321,31 @@ export const StatsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0d1117',
+    backgroundColor: '#0A0D14',
   },
   header: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: 18,
+    paddingTop: 10,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#21262d',
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
-  headerSubtitle: {
-    color: '#8b949e',
-    fontSize: 12,
-    fontWeight: '600',
+  headerTag: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginBottom: 4,
+  },
+  headerTagText: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '700',
     letterSpacing: 0.5,
   },
   headerTitle: {
-    color: '#f0f6fc',
+    color: '#FFFFFF',
     fontSize: 24,
     fontWeight: '800',
     letterSpacing: -0.5,
@@ -334,44 +363,53 @@ const styles = StyleSheet.create({
   },
   kpiCard: {
     flex: 1,
-    backgroundColor: '#161b22',
-    borderRadius: 14,
+    backgroundColor: '#131824',
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#30363d',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     padding: 16,
     alignItems: 'center',
   },
+  kpiIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
   kpiValue: {
-    color: '#f0f6fc',
+    color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '800',
-    marginTop: 8,
     marginBottom: 2,
+    letterSpacing: -0.5,
   },
   kpiLabel: {
-    color: '#8b949e',
+    color: '#64748B',
     fontSize: 11,
-    fontWeight: '500',
+    fontWeight: '600',
     textAlign: 'center',
   },
   sectionCard: {
-    backgroundColor: '#161b22',
-    borderRadius: 14,
+    backgroundColor: '#131824',
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#30363d',
-    padding: 16,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    padding: 18,
     marginBottom: 16,
   },
   cardTitle: {
-    color: '#f0f6fc',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+    letterSpacing: -0.2,
   },
   cardSubtitle: {
-    color: '#8b949e',
+    color: '#64748B',
     fontSize: 12,
     marginTop: 2,
-    marginBottom: 14,
+    marginBottom: 16,
   },
   chartContainer: {
     flexDirection: 'row',
@@ -387,26 +425,26 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   chartColValue: {
-    color: '#8b949e',
+    color: '#64748B',
     fontSize: 10,
     fontWeight: '600',
     marginBottom: 6,
   },
   barTrack: {
     width: 14,
-    height: 90,
-    backgroundColor: '#0d1117',
+    height: 86,
+    backgroundColor: '#1A2130',
     borderRadius: 6,
     justifyContent: 'flex-end',
     overflow: 'hidden',
   },
   barFill: {
     width: '100%',
-    backgroundColor: '#38bdf8',
+    backgroundColor: '#38BDF8',
     borderRadius: 6,
   },
   chartDayLabel: {
-    color: '#8b949e',
+    color: '#64748B',
     fontSize: 11,
     fontWeight: '600',
     marginTop: 8,
@@ -417,22 +455,22 @@ const styles = StyleSheet.create({
   leaderboardRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0d1117',
-    borderRadius: 10,
+    backgroundColor: '#0C0F17',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#30363d',
-    padding: 10,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
+    padding: 12,
   },
   rankNum: {
-    color: '#8b949e',
+    color: '#64748B',
     fontSize: 13,
     fontWeight: '800',
     width: 26,
   },
   habitIconMini: {
-    width: 30,
-    height: 30,
-    borderRadius: 6,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -441,22 +479,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   habitNameMini: {
-    color: '#f0f6fc',
+    color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   habitMetaMini: {
-    color: '#8b949e',
+    color: '#64748B',
     fontSize: 11,
     marginTop: 2,
   },
   streakBadgeMini: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.04)',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 999,
     gap: 4,
   },
   streakTextMini: {
@@ -468,30 +505,30 @@ const styles = StyleSheet.create({
   },
   milestoneCard: {
     flexDirection: 'row',
-    backgroundColor: '#0d1117',
-    borderRadius: 10,
+    backgroundColor: '#0C0F17',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#21262d',
-    padding: 12,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
+    padding: 14,
     alignItems: 'center',
-    opacity: 0.7,
+    opacity: 0.65,
   },
   milestoneCardUnlocked: {
     opacity: 1,
-    borderColor: 'rgba(250, 204, 21, 0.3)',
-    backgroundColor: 'rgba(250, 204, 21, 0.03)',
+    borderColor: 'rgba(250, 204, 21, 0.25)',
+    backgroundColor: 'rgba(250, 204, 21, 0.04)',
   },
   milestoneIconBox: {
     width: 44,
     height: 44,
-    borderRadius: 10,
-    backgroundColor: '#161b22',
+    borderRadius: 12,
+    backgroundColor: '#181E2C',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   milestoneIconBoxUnlocked: {
-    backgroundColor: 'rgba(250, 204, 21, 0.12)',
+    backgroundColor: 'rgba(250, 204, 21, 0.15)',
   },
   milestoneContent: {
     flex: 1,
@@ -502,28 +539,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   milestoneTitle: {
-    color: '#8b949e',
+    color: '#94A3B8',
     fontSize: 14,
     fontWeight: '700',
   },
   milestoneTitleUnlocked: {
-    color: '#f0f6fc',
+    color: '#FFFFFF',
   },
   unlockedBadge: {
-    backgroundColor: 'rgba(57, 211, 83, 0.15)',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
     borderWidth: 0.5,
-    borderColor: '#39d353',
+    borderColor: '#10B981',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
   unlockedBadgeText: {
-    color: '#39d353',
+    color: '#10B981',
     fontSize: 9,
     fontWeight: '800',
   },
   milestoneDesc: {
-    color: '#8b949e',
+    color: '#64748B',
     fontSize: 12,
     marginTop: 2,
   },
@@ -536,17 +573,17 @@ const styles = StyleSheet.create({
   milestoneTrack: {
     flex: 1,
     height: 4,
-    backgroundColor: '#21262d',
-    borderRadius: 2,
+    backgroundColor: '#1E2536',
+    borderRadius: 999,
     overflow: 'hidden',
   },
   milestoneFill: {
     height: '100%',
-    backgroundColor: '#38bdf8',
-    borderRadius: 2,
+    backgroundColor: '#38BDF8',
+    borderRadius: 999,
   },
   milestoneProgressText: {
-    color: '#8b949e',
+    color: '#64748B',
     fontSize: 10,
     fontWeight: '600',
   },

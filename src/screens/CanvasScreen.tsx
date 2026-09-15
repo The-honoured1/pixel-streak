@@ -12,7 +12,6 @@ import { PixelGrid } from '../components/PixelGrid';
 import { DayDetailsModal } from '../components/DayDetailsModal';
 import { PaletteKey, ViewSpan, Habit } from '../types';
 import { PALETTES } from '../constants/palettes';
-import { formatDisplayDate, getTodayString } from '../utils/dateUtils';
 
 export const CanvasScreen: React.FC = () => {
   const { activeHabits, toggleRecord } = useHabits();
@@ -25,13 +24,11 @@ export const CanvasScreen: React.FC = () => {
     level: number;
   } | null>(null);
 
-  // Compute composite records (aggregate score or max level across all habits per date)
+  // Compute composite records
   const compositeRecords: Record<string, number> = useMemo(() => {
     const records: Record<string, number> = {};
 
     if (selectedHabitId === 'all') {
-      // Aggregate across all active habits
-      // Calculate fraction of habits completed that day -> scale to 1..4
       const dateCounts: Record<string, number> = {};
       const totalHabits = Math.max(1, activeHabits.length);
 
@@ -66,34 +63,21 @@ export const CanvasScreen: React.FC = () => {
     let totalScore = 0;
     Object.values(compositeRecords).forEach(val => (totalScore += val));
 
-    // Find best day
-    let bestDate = '';
-    let maxLevel = 0;
-    Object.entries(compositeRecords).forEach(([d, lvl]) => {
-      if (lvl > maxLevel) {
-        maxLevel = lvl;
-        bestDate = d;
-      }
-    });
-
     return {
       totalCompletedDays,
       totalScore,
-      bestDate,
     };
   }, [compositeRecords]);
 
   const activePalette = PALETTES[globalPalette] || PALETTES.emerald;
 
   const handlePixelPress = (date: string, level: number) => {
-    // If a specific habit is selected, open its day modal
     if (selectedHabitId !== 'all') {
       const habit = activeHabits.find(h => h.id === selectedHabitId);
       if (habit) {
         setDayDetailsModal({ habit, date, level });
       }
     } else if (activeHabits.length > 0) {
-      // Default to the first active habit for quick editing
       setDayDetailsModal({ habit: activeHabits[0], date, level });
     }
   };
@@ -103,7 +87,9 @@ export const CanvasScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerSubtitle}>VISUAL MATRIX</Text>
+          <View style={styles.headerTag}>
+            <Text style={styles.headerTagText}>MATRIX STUDIO</Text>
+          </View>
           <Text style={styles.headerTitle}>Pixel Canvas</Text>
         </View>
       </View>
@@ -113,28 +99,40 @@ export const CanvasScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Habit Source Selector */}
-        <Text style={styles.sectionTitle}>Canvas Source</Text>
+        {activeHabits.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <View style={[styles.emptyIconCircle, { backgroundColor: 'rgba(6, 182, 212, 0.12)', borderColor: 'rgba(6, 182, 212, 0.3)' }]}>
+              <MaterialCommunityIcons name="view-grid-outline" size={32} color="#06B6D4" />
+            </View>
+            <Text style={styles.emptyTitle}>No habits yet</Text>
+            <Text style={styles.emptySubtitle}>
+              Add habits on the Streaks tab to see your visual pixel matrix light up.
+            </Text>
+          </View>
+        ) : (
+          <>
+            {/* Habit Source Selector */}
+            <Text style={styles.sectionTitle}>Canvas Stream</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
           <TouchableOpacity
             style={[
               styles.chip,
-              selectedHabitId === 'all' && styles.chipActive,
+              selectedHabitId === 'all' && [styles.chipActive, { borderColor: activePalette.accent }],
             ]}
             onPress={() => setSelectedHabitId('all')}
           >
             <MaterialCommunityIcons
               name="layers-triple-outline"
-              size={14}
-              color={selectedHabitId === 'all' ? '#38bdf8' : '#8b949e'}
+              size={15}
+              color={selectedHabitId === 'all' ? activePalette.accent : '#64748B'}
             />
             <Text
               style={[
                 styles.chipText,
-                selectedHabitId === 'all' && styles.chipTextActive,
+                selectedHabitId === 'all' && [styles.chipTextActive, { color: activePalette.accent }],
               ]}
             >
-              All Habits Combined ({activeHabits.length})
+              All Habits ({activeHabits.length})
             </Text>
           </TouchableOpacity>
 
@@ -143,19 +141,19 @@ export const CanvasScreen: React.FC = () => {
               key={h.id}
               style={[
                 styles.chip,
-                selectedHabitId === h.id && styles.chipActive,
+                selectedHabitId === h.id && [styles.chipActive, { borderColor: activePalette.accent }],
               ]}
               onPress={() => setSelectedHabitId(h.id)}
             >
               <MaterialCommunityIcons
                 name={(h.icon as any) || 'check'}
-                size={14}
-                color={selectedHabitId === h.id ? '#38bdf8' : '#8b949e'}
+                size={15}
+                color={selectedHabitId === h.id ? activePalette.accent : '#64748B'}
               />
               <Text
                 style={[
                   styles.chipText,
-                  selectedHabitId === h.id && styles.chipTextActive,
+                  selectedHabitId === h.id && [styles.chipTextActive, { color: activePalette.accent }],
                 ]}
               >
                 {h.name}
@@ -166,7 +164,7 @@ export const CanvasScreen: React.FC = () => {
 
         {/* View Span Selector (30d, 90d, 180d, 1y) */}
         <View style={styles.controlsRow}>
-          <Text style={styles.sectionTitle}>Time Window</Text>
+          <Text style={styles.sectionTitle}>Time Frame</Text>
           <View style={styles.spanSelector}>
             {(['30days', '90days', '180days', 'year'] as ViewSpan[]).map(span => (
               <TouchableOpacity
@@ -200,15 +198,22 @@ export const CanvasScreen: React.FC = () => {
         <View style={styles.canvasCard}>
           <View style={styles.canvasHeader}>
             <View style={styles.canvasTitleGroup}>
-              <MaterialCommunityIcons name="grid" size={18} color={activePalette.accent} />
+              <View
+                style={[
+                  styles.canvasIconCircle,
+                  { backgroundColor: `${activePalette.accent}18` },
+                ]}
+              >
+                <MaterialCommunityIcons name="view-grid" size={16} color={activePalette.accent} />
+              </View>
               <Text style={styles.canvasTitle}>
-                {selectedHabitId === 'all' ? 'Life Activity Matrix' : 'Habit Contribution Matrix'}
+                {selectedHabitId === 'all' ? 'Life Activity Matrix' : 'Habit Streak Matrix'}
               </Text>
             </View>
-            <Text style={styles.canvasSubtitle}>Tap square to inspect/toggle</Text>
+            <Text style={styles.canvasSubtitle}>Tap pixel to inspect</Text>
           </View>
 
-          {/* Interactive Heatmap Matrix */}
+          {/* Heatmap Grid */}
           <View style={styles.gridWrapper}>
             <PixelGrid
               records={compositeRecords}
@@ -227,8 +232,8 @@ export const CanvasScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Palette Theme Chooser for the Canvas */}
-        <Text style={styles.sectionTitle}>Canvas Color Theme</Text>
+        {/* Palette Theme Chooser */}
+        <Text style={styles.sectionTitle}>Palette Themes</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.palettesList}>
           {(Object.keys(PALETTES) as PaletteKey[]).map(key => {
             const pal = PALETTES[key];
@@ -238,7 +243,7 @@ export const CanvasScreen: React.FC = () => {
                 key={key}
                 style={[
                   styles.themeButton,
-                  isSelected && { borderColor: pal.accent, backgroundColor: '#21262d' },
+                  isSelected && { borderColor: pal.accent, backgroundColor: 'rgba(255,255,255,0.06)' },
                 ]}
                 onPress={() => setGlobalPalette(key)}
               >
@@ -265,7 +270,7 @@ export const CanvasScreen: React.FC = () => {
 
         {/* Matrix Insights Metrics */}
         <View style={styles.insightsCard}>
-          <Text style={styles.insightsTitle}>Matrix Insights</Text>
+          <Text style={styles.insightsTitle}>Canvas Metrics</Text>
           <View style={styles.metricsGrid}>
             <View style={styles.metricItem}>
               <Text style={styles.metricNumber}>{canvasStats.totalCompletedDays}</Text>
@@ -275,16 +280,17 @@ export const CanvasScreen: React.FC = () => {
               <Text style={[styles.metricNumber, { color: activePalette.accent }]}>
                 {canvasStats.totalScore}
               </Text>
-              <Text style={styles.metricLabel}>Total Pixels Colored</Text>
+              <Text style={styles.metricLabel}>Total Pixels</Text>
             </View>
             <View style={styles.metricItem}>
               <Text style={styles.metricNumber}>
                 {activeHabits.length}
               </Text>
-              <Text style={styles.metricLabel}>Tracking Habits</Text>
             </View>
           </View>
         </View>
+        </>
+      )}
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -309,23 +315,31 @@ export const CanvasScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0d1117',
+    backgroundColor: '#0A0D14',
   },
   header: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: 18,
+    paddingTop: 10,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#21262d',
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
-  headerSubtitle: {
-    color: '#8b949e',
-    fontSize: 12,
-    fontWeight: '600',
+  headerTag: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginBottom: 4,
+  },
+  headerTagText: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '700',
     letterSpacing: 0.5,
   },
   headerTitle: {
-    color: '#f0f6fc',
+    color: '#FFFFFF',
     fontSize: 24,
     fontWeight: '800',
     letterSpacing: -0.5,
@@ -337,11 +351,11 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   sectionTitle: {
-    color: '#8b949e',
-    fontSize: 12,
+    color: '#64748B',
+    fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
     marginBottom: 8,
     marginTop: 6,
   },
@@ -352,26 +366,26 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#161b22',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
+    backgroundColor: '#131824',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#30363d',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     marginRight: 8,
     gap: 6,
   },
   chipActive: {
-    backgroundColor: 'rgba(56, 189, 248, 0.15)',
-    borderColor: '#38bdf8',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1.5,
   },
   chipText: {
-    color: '#8b949e',
+    color: '#94A3B8',
     fontSize: 12,
     fontWeight: '600',
   },
   chipTextActive: {
-    color: '#38bdf8',
+    fontWeight: '700',
   },
   controlsRow: {
     flexDirection: 'row',
@@ -381,58 +395,66 @@ const styles = StyleSheet.create({
   },
   spanSelector: {
     flexDirection: 'row',
-    backgroundColor: '#161b22',
-    borderRadius: 8,
+    backgroundColor: '#131824',
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#30363d',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     padding: 2,
   },
   spanBtn: {
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 6,
+    borderRadius: 8,
   },
   spanBtnActive: {
-    backgroundColor: '#21262d',
+    backgroundColor: '#1E2536',
   },
   spanBtnText: {
-    color: '#8b949e',
+    color: '#64748B',
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   spanBtnTextActive: {
-    color: '#f0f6fc',
+    color: '#FFFFFF',
   },
   canvasCard: {
-    backgroundColor: '#161b22',
-    borderRadius: 14,
+    backgroundColor: '#131824',
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#30363d',
-    padding: 14,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    padding: 16,
     marginBottom: 20,
   },
   canvasHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
-    paddingBottom: 8,
+    marginBottom: 14,
+    paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#21262d',
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
   },
   canvasTitleGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
+  canvasIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   canvasTitle: {
-    color: '#f0f6fc',
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
   },
   canvasSubtitle: {
-    color: '#8b949e',
+    color: '#64748B',
     fontSize: 11,
+    fontWeight: '500',
   },
   gridWrapper: {
     paddingVertical: 4,
@@ -442,39 +464,39 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   themeButton: {
-    backgroundColor: '#161b22',
-    borderRadius: 8,
+    backgroundColor: '#131824',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#30363d',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 9,
     marginRight: 8,
     alignItems: 'center',
   },
   themeDotRow: {
     flexDirection: 'row',
-    gap: 3,
-    marginBottom: 4,
+    gap: 4,
+    marginBottom: 5,
   },
   themeDot: {
     width: 8,
     height: 8,
-    borderRadius: 2,
+    borderRadius: 2.5,
   },
   themeName: {
-    color: '#8b949e',
+    color: '#94A3B8',
     fontSize: 11,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   insightsCard: {
-    backgroundColor: '#161b22',
-    borderRadius: 14,
+    backgroundColor: '#131824',
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#30363d',
-    padding: 16,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    padding: 18,
   },
   insightsTitle: {
-    color: '#f0f6fc',
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
     marginBottom: 14,
@@ -488,13 +510,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   metricNumber: {
-    color: '#f0f6fc',
+    color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '800',
   },
   metricLabel: {
-    color: '#8b949e',
+    color: '#64748B',
     fontSize: 11,
+    fontWeight: '600',
     marginTop: 4,
     textAlign: 'center',
   },

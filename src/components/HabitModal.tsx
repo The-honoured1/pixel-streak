@@ -10,8 +10,8 @@ import {
   Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Habit, PaletteKey, FrequencyType } from '../types';
-import { PALETTES, AVAILABLE_ICONS, CATEGORIES } from '../constants/palettes';
+import { Habit, PaletteKey } from '../types';
+import { PALETTES, AVAILABLE_ICONS } from '../constants/palettes';
 
 interface HabitModalProps {
   visible: boolean;
@@ -30,56 +30,43 @@ export const HabitModal: React.FC<HabitModalProps> = ({
   onSave,
   onUpdate,
   onDelete,
-  onArchive,
 }) => {
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [icon, setIcon] = useState('check-circle-outline');
+  const [icon, setIcon] = useState('fire');
   const [palette, setPalette] = useState<PaletteKey>('emerald');
-  const [frequency, setFrequency] = useState<FrequencyType>('daily');
-  const [category, setCategory] = useState('Productivity');
 
   useEffect(() => {
     if (habitToEdit) {
       setName(habitToEdit.name);
-      setDescription(habitToEdit.description || '');
       setIcon(habitToEdit.icon);
       setPalette(habitToEdit.palette);
-      setFrequency(habitToEdit.frequency);
-      setCategory(habitToEdit.category || 'Productivity');
     } else {
       setName('');
-      setDescription('');
-      setIcon('code-tags');
+      setIcon('fire');
       setPalette('emerald');
-      setFrequency('daily');
-      setCategory('Productivity');
     }
   }, [habitToEdit, visible]);
 
   const handleSave = () => {
     if (!name.trim()) {
-      Alert.alert('Habit Name Required', 'Please enter a name for your habit.');
+      Alert.alert('Habit Name', 'Please enter a name for your habit.');
       return;
     }
 
     if (habitToEdit && onUpdate) {
       onUpdate(habitToEdit.id, {
         name: name.trim(),
-        description: description.trim(),
         icon,
         palette,
-        frequency,
-        category,
       });
     } else {
       onSave({
         name: name.trim(),
-        description: description.trim(),
+        description: '',
         icon,
         palette,
-        frequency,
-        category,
+        frequency: 'daily',
+        category: 'General',
       });
     }
     onClose();
@@ -89,7 +76,7 @@ export const HabitModal: React.FC<HabitModalProps> = ({
     if (!habitToEdit || !onDelete) return;
     Alert.alert(
       'Delete Habit',
-      `Are you sure you want to delete "${habitToEdit.name}"? This action cannot be undone.`,
+      `Are you sure you want to delete "${habitToEdit.name}"?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -104,11 +91,7 @@ export const HabitModal: React.FC<HabitModalProps> = ({
     );
   };
 
-  const handleArchiveToggle = () => {
-    if (!habitToEdit || !onArchive) return;
-    onArchive(habitToEdit.id);
-    onClose();
-  };
+  const activePal = PALETTES[palette] || PALETTES.emerald;
 
   return (
     <Modal
@@ -122,77 +105,44 @@ export const HabitModal: React.FC<HabitModalProps> = ({
           {/* Header */}
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
-              {habitToEdit ? 'Edit Habit' : 'New Pixel Habit'}
+              {habitToEdit ? 'Edit Habit' : 'New Habit'}
             </Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <MaterialCommunityIcons name="close" size={22} color="#8b949e" />
+              <MaterialCommunityIcons name="close" size={22} color="#94A3B8" />
             </TouchableOpacity>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollBody}>
-            {/* Habit Name Input */}
-            <Text style={styles.sectionLabel}>Habit Title</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="e.g. Read 20 pages, 5km Run, LeetCode..."
-              placeholderTextColor="#6e7681"
-              value={name}
-              onChangeText={setName}
-            />
-
-            {/* Description Input */}
-            <Text style={styles.sectionLabel}>Description (Optional)</Text>
-            <TextInput
-              style={[styles.textInput, styles.textArea]}
-              placeholder="Details or motivation..."
-              placeholderTextColor="#6e7681"
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              numberOfLines={2}
-            />
-
-            {/* Category */}
-            <Text style={styles.sectionLabel}>Category</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalChips}>
-              {CATEGORIES.map(cat => (
-                <TouchableOpacity
-                  key={cat}
-                  style={[
-                    styles.chip,
-                    category === cat && styles.chipActive,
-                  ]}
-                  onPress={() => setCategory(cat)}
-                >
-                  <Text style={[styles.chipText, category === cat && styles.chipTextActive]}>
-                    {cat}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            {/* Frequency */}
-            <Text style={styles.sectionLabel}>Frequency</Text>
-            <View style={styles.frequencyRow}>
-              {(['daily', 'weekdays', 'weekends'] as FrequencyType[]).map(freq => (
-                <TouchableOpacity
-                  key={freq}
-                  style={[
-                    styles.freqButton,
-                    frequency === freq && styles.freqButtonActive,
-                  ]}
-                  onPress={() => setFrequency(freq)}
-                >
-                  <Text style={[styles.freqButtonText, frequency === freq && styles.freqButtonTextActive]}>
-                    {freq.toUpperCase()}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+            {/* Live Preview Card */}
+            <View style={styles.previewContainer}>
+              <View
+                style={[
+                  styles.previewIcon,
+                  { backgroundColor: `${activePal.accent}20`, borderColor: `${activePal.accent}40` },
+                ]}
+              >
+                <MaterialCommunityIcons name={icon as any} size={28} color={activePal.accent} />
+              </View>
+              <Text style={styles.previewName} numberOfLines={1}>
+                {name.trim() || 'Habit Name'}
+              </Text>
             </View>
 
-            {/* Color Palette Picker */}
-            <Text style={styles.sectionLabel}>Pixel Palette</Text>
-            <View style={styles.palettesGrid}>
+            {/* Name Input */}
+            <Text style={styles.sectionLabel}>Name</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="e.g. Read 20 mins, Workout, Water..."
+              placeholderTextColor="#64748B"
+              value={name}
+              onChangeText={setName}
+              autoFocus={!habitToEdit && visible}
+              maxLength={40}
+            />
+
+            {/* Color Swatches */}
+            <Text style={styles.sectionLabel}>Color Theme</Text>
+            <View style={styles.colorRow}>
               {(Object.keys(PALETTES) as PaletteKey[]).map(key => {
                 const pal = PALETTES[key];
                 const isSelected = palette === key;
@@ -200,90 +150,65 @@ export const HabitModal: React.FC<HabitModalProps> = ({
                   <TouchableOpacity
                     key={key}
                     style={[
-                      styles.paletteCard,
-                      isSelected && { borderColor: pal.accent, backgroundColor: '#21262d' },
+                      styles.colorCircle,
+                      { backgroundColor: pal.accent },
+                      isSelected && styles.colorCircleSelected,
                     ]}
                     onPress={() => setPalette(key)}
+                    activeOpacity={0.7}
                   >
-                    <Text style={[styles.paletteName, isSelected && { color: pal.accent }]}>
-                      {pal.name}
-                    </Text>
-                    <View style={styles.paletteStrip}>
-                      {pal.levels.map((color, i) => (
-                        <View
-                          key={i}
-                          style={[
-                            styles.paletteDot,
-                            { backgroundColor: color },
-                          ]}
-                        />
-                      ))}
-                    </View>
+                    {isSelected && (
+                      <MaterialCommunityIcons name="check" size={16} color="#0B0F19" />
+                    )}
                   </TouchableOpacity>
                 );
               })}
             </View>
 
             {/* Icon Picker */}
-            <Text style={styles.sectionLabel}>Habit Icon</Text>
+            <Text style={styles.sectionLabel}>Icon</Text>
             <View style={styles.iconsGrid}>
-              {AVAILABLE_ICONS.map(item => {
-                const isSelected = icon === item.name;
+              {AVAILABLE_ICONS.map(ic => {
+                const isSelected = icon === ic.name;
                 return (
                   <TouchableOpacity
-                    key={item.name}
+                    key={ic.name}
                     style={[
                       styles.iconButton,
-                      isSelected && styles.iconButtonSelected,
+                      isSelected && {
+                        borderColor: activePal.accent,
+                        backgroundColor: `${activePal.accent}20`,
+                      },
                     ]}
-                    onPress={() => setIcon(item.name)}
+                    onPress={() => setIcon(ic.name)}
+                    activeOpacity={0.7}
                   >
                     <MaterialCommunityIcons
-                      name={item.name as any}
+                      name={ic.name as any}
                       size={24}
-                      color={isSelected ? '#38bdf8' : '#8b949e'}
+                      color={isSelected ? activePal.accent : '#94A3B8'}
                     />
                   </TouchableOpacity>
                 );
               })}
             </View>
 
-            {/* Action Buttons for Edit Mode */}
+            {/* Delete button if editing */}
             {habitToEdit && (
-              <View style={styles.destructiveActions}>
-                <TouchableOpacity
-                  style={styles.archiveButton}
-                  onPress={handleArchiveToggle}
-                >
-                  <MaterialCommunityIcons
-                    name={habitToEdit.archived ? 'package-up' : 'package-down'}
-                    size={18}
-                    color="#8b949e"
-                  />
-                  <Text style={styles.archiveText}>
-                    {habitToEdit.archived ? 'Restore Habit' : 'Archive Habit'}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={handleDelete}
-                >
-                  <MaterialCommunityIcons name="trash-can-outline" size={18} color="#f85149" />
-                  <Text style={styles.deleteText}>Delete</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+                <MaterialCommunityIcons name="trash-can-outline" size={18} color="#F43F5E" />
+                <Text style={styles.deleteText}>Delete this habit</Text>
+              </TouchableOpacity>
             )}
-
-            <View style={{ height: 20 }} />
           </ScrollView>
 
-          {/* Footer Save Button */}
+          {/* Action Button */}
           <View style={styles.footer}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+            <TouchableOpacity
+              style={[styles.saveBtn, { backgroundColor: activePal.accent }]}
+              onPress={handleSave}
+              activeOpacity={0.8}
+            >
               <Text style={styles.saveBtnText}>
                 {habitToEdit ? 'Save Changes' : 'Create Habit'}
               </Text>
@@ -302,26 +227,26 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#161b22',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderWidth: 1,
-    borderColor: '#30363d',
-    maxHeight: '88%',
-    paddingBottom: 20,
+    backgroundColor: '#111522',
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    borderTopWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    maxHeight: '85%',
+    paddingBottom: 24,
   },
   modalHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 18,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#30363d',
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
   },
   modalTitle: {
-    color: '#f0f6fc',
+    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
   },
@@ -330,186 +255,112 @@ const styles = StyleSheet.create({
   },
   scrollBody: {
     paddingHorizontal: 20,
-    paddingTop: 14,
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
+  previewContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#181E2C',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 14,
+    marginBottom: 8,
+  },
+  previewIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewName: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
+    flex: 1,
   },
   sectionLabel: {
-    color: '#c9d1d9',
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 14,
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginTop: 16,
     marginBottom: 8,
   },
   textInput: {
-    backgroundColor: '#0d1117',
-    borderRadius: 8,
+    backgroundColor: '#181E2C',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#30363d',
-    color: '#f0f6fc',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
-  },
-  textArea: {
-    minHeight: 60,
-    textAlignVertical: 'top',
-  },
-  horizontalChips: {
-    flexDirection: 'row',
-  },
-  chip: {
-    backgroundColor: '#21262d',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#30363d',
-    marginRight: 8,
-  },
-  chipActive: {
-    backgroundColor: 'rgba(56, 189, 248, 0.15)',
-    borderColor: '#38bdf8',
-  },
-  chipText: {
-    color: '#8b949e',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  chipTextActive: {
-    color: '#38bdf8',
-    fontWeight: '700',
-  },
-  frequencyRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  freqButton: {
-    flex: 1,
-    backgroundColor: '#0d1117',
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#30363d',
-    alignItems: 'center',
-  },
-  freqButtonActive: {
-    backgroundColor: '#238636',
-    borderColor: '#2ea043',
-  },
-  freqButtonText: {
-    color: '#8b949e',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  freqButtonTextActive: {
-    color: '#ffffff',
-  },
-  palettesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  paletteCard: {
-    width: '48%',
-    backgroundColor: '#0d1117',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#30363d',
-    padding: 10,
-  },
-  paletteName: {
-    color: '#8b949e',
-    fontSize: 12,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '600',
-    marginBottom: 6,
   },
-  paletteStrip: {
+  colorRow: {
     flexDirection: 'row',
-    gap: 4,
+    justifyContent: 'space-between',
+    marginVertical: 4,
   },
-  paletteDot: {
-    flex: 1,
-    height: 12,
-    borderRadius: 2,
+  colorCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  colorCircleSelected: {
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    transform: [{ scale: 1.1 }],
   },
   iconsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+    marginTop: 4,
   },
   iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
-    backgroundColor: '#0d1117',
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#181E2C',
     borderWidth: 1,
-    borderColor: '#30363d',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  iconButtonSelected: {
-    borderColor: '#38bdf8',
-    backgroundColor: 'rgba(56, 189, 248, 0.1)',
-  },
-  destructiveActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 24,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#30363d',
-  },
-  archiveButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    padding: 8,
-  },
-  archiveText: {
-    color: '#8b949e',
-    fontSize: 13,
-    fontWeight: '500',
   },
   deleteButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    padding: 8,
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 24,
+    paddingVertical: 12,
   },
   deleteText: {
-    color: '#f85149',
-    fontSize: 13,
+    color: '#F43F5E',
+    fontSize: 14,
     fontWeight: '600',
   },
   footer: {
-    flexDirection: 'row',
     paddingHorizontal: 20,
-    paddingTop: 14,
-    gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#30363d',
-  },
-  cancelBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: '#21262d',
-    alignItems: 'center',
-  },
-  cancelBtnText: {
-    color: '#c9d1d9',
-    fontWeight: '600',
-    fontSize: 14,
+    paddingTop: 8,
   },
   saveBtn: {
-    flex: 2,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: '#238636',
+    paddingVertical: 15,
+    borderRadius: 16,
     alignItems: 'center',
   },
   saveBtnText: {
-    color: '#ffffff',
-    fontWeight: '700',
-    fontSize: 14,
+    color: '#0B0F19',
+    fontWeight: '800',
+    fontSize: 16,
   },
 });

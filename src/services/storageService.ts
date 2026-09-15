@@ -1,25 +1,26 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Habit } from '../types';
-import { DEFAULT_HABITS } from '../constants/defaultHabits';
 
-const STORAGE_KEY = '@pixel_streak_habits_v1';
+const STORAGE_KEY = '@pixel_streak_habits_v3';
 
 export async function loadHabitsFromStorage(): Promise<Habit[]> {
   try {
+    // Purge old legacy dummy storage keys completely
+    await AsyncStorage.removeItem('@pixel_streak_habits_v1');
+    await AsyncStorage.removeItem('@pixel_streak_habits_v2');
+
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      // First launch: initialize with sample habits
-      await saveHabitsToStorage(DEFAULT_HABITS);
-      return DEFAULT_HABITS;
+      return [];
     }
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
       return parsed;
     }
-    return DEFAULT_HABITS;
+    return [];
   } catch (error) {
     console.error('Error loading habits from storage:', error);
-    return DEFAULT_HABITS;
+    return [];
   }
 }
 
@@ -35,7 +36,7 @@ export async function saveHabitsToStorage(habits: Habit[]): Promise<boolean> {
 
 export async function exportDataJson(habits: Habit[]): Promise<string> {
   const exportPayload = {
-    version: '1.0',
+    version: '2.0',
     exportedAt: new Date().toISOString(),
     appName: 'Pixel Streak',
     habits,
@@ -55,13 +56,12 @@ export async function importDataJson(jsonString: string): Promise<{ success: boo
     }
 
     if (!habitsArray) {
-      return { success: false, error: 'Invalid file format. No habits array found.' };
+      return { success: false, error: 'Invalid format. No habits array found.' };
     }
 
-    // Validate habit objects
     const validated: Habit[] = habitsArray.map((h: any, idx: number) => ({
-      id: h.id || `imported-${Date.now()}-${idx}`,
-      name: String(h.name || 'Untitled Habit'),
+      id: h.id || `habit-${Date.now()}-${idx}`,
+      name: String(h.name || 'New Habit'),
       description: h.description ? String(h.description) : '',
       icon: h.icon || 'check-circle-outline',
       palette: h.palette || 'emerald',
@@ -81,7 +81,17 @@ export async function importDataJson(jsonString: string): Promise<{ success: boo
   }
 }
 
+export async function clearAllHabitsFromStorage(): Promise<boolean> {
+  try {
+    await AsyncStorage.removeItem(STORAGE_KEY);
+    return true;
+  } catch (error) {
+    console.error('Error clearing habits from storage:', error);
+    return false;
+  }
+}
+
 export async function resetToDefaultData(): Promise<Habit[]> {
-  await saveHabitsToStorage(DEFAULT_HABITS);
-  return DEFAULT_HABITS;
+  await clearAllHabitsFromStorage();
+  return [];
 }

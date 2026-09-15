@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { generateContributionMatrix, MatrixColumn, getDaysCountForSpan, formatDisplayDate } from '../utils/dateUtils';
+import { generateContributionMatrix, MatrixColumn, getDaysCountForSpan } from '../utils/dateUtils';
 import { PALETTES } from '../constants/palettes';
 import { PaletteKey, ViewSpan } from '../types';
 
@@ -39,12 +39,12 @@ export const PixelGrid: React.FC<PixelGridProps> = ({
   useEffect(() => {
     const timer = setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: false });
-    }, 50);
+    }, 60);
     return () => clearTimeout(timer);
   }, [span, matrix]);
 
   const getColor = (level: number, isFuture: boolean) => {
-    if (isFuture) return '#10141a'; // Dimmer empty for future
+    if (isFuture) return '#121620';
     const safeLevel = Math.min(Math.max(0, level || 0), 4);
     return palette.levels[safeLevel];
   };
@@ -59,7 +59,7 @@ export const PixelGrid: React.FC<PixelGridProps> = ({
       >
         {/* Day of week labels */}
         {showDayLabels && (
-          <View style={[styles.dayLabelsColumn, { marginRight: gap + 2 }]}>
+          <View style={[styles.dayLabelsColumn, { marginRight: gap + 3 }]}>
             <View style={{ height: 16 }} />
             {DAY_LABELS.map((day, idx) => (
               <View
@@ -72,7 +72,6 @@ export const PixelGrid: React.FC<PixelGridProps> = ({
                   },
                 ]}
               >
-                {/* Show Monday, Wednesday, Friday labels */}
                 {idx === 1 || idx === 3 || idx === 5 ? (
                   <Text style={styles.dayLabelText}>{day}</Text>
                 ) : null}
@@ -95,6 +94,7 @@ export const PixelGrid: React.FC<PixelGridProps> = ({
             {col.days.map(day => {
               const level = records[day.date] || 0;
               const squareColor = getColor(level, day.isFuture);
+              const isFilled = level > 0 && !day.isFuture;
 
               return (
                 <TouchableOpacity
@@ -109,7 +109,9 @@ export const PixelGrid: React.FC<PixelGridProps> = ({
                       height: squareSize,
                       backgroundColor: squareColor,
                       marginBottom: gap,
-                      borderColor: level > 0 ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
+                      borderColor: isFilled
+                        ? 'rgba(255, 255, 255, 0.15)'
+                        : 'rgba(255, 255, 255, 0.03)',
                     },
                   ]}
                 />
@@ -145,12 +147,12 @@ export const PixelGrid: React.FC<PixelGridProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 6,
+    paddingVertical: 4,
   },
   scrollContent: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingHorizontal: 4,
+    paddingHorizontal: 2,
   },
   dayLabelsColumn: {
     flexDirection: 'column',
@@ -162,9 +164,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dayLabelText: {
-    color: '#6e7681',
+    color: '#475569',
     fontSize: 9,
-    fontWeight: '600',
+    fontWeight: '700',
     textAlign: 'center',
   },
   weekColumn: {
@@ -175,35 +177,35 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   monthLabelText: {
-    color: '#8b949e',
+    color: '#64748B',
     fontSize: 10,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   pixelSquare: {
-    borderRadius: 2.5,
+    borderRadius: 3,
     borderWidth: 0.5,
   },
   legendContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    marginTop: 8,
-    marginRight: 6,
+    marginTop: 10,
+    paddingRight: 6,
   },
   legendText: {
-    color: '#6e7681',
+    color: '#64748B',
     fontSize: 10,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   legendColors: {
     flexDirection: 'row',
     marginHorizontal: 6,
   },
   legendSquare: {
-    width: 10,
-    height: 10,
-    borderRadius: 2,
+    width: 11,
+    height: 11,
+    borderRadius: 2.5,
     borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(255,255,255,0.08)',
   },
 });

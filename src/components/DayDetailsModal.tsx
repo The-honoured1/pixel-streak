@@ -25,7 +25,7 @@ export const DayDetailsModal: React.FC<DayDetailsModalProps> = ({
   if (!habit || !visible) return null;
 
   const palette = PALETTES[habit.palette] || PALETTES.emerald;
-  const levelLabels = ['None', 'Light', 'Moderate', 'Substantial', 'Max / Complete'];
+  const levelLabels = ['Missed / Rest', 'Light Effort', 'Moderate', 'Strong', 'Mastered (100%)'];
 
   return (
     <Modal
@@ -39,24 +39,31 @@ export const DayDetailsModal: React.FC<DayDetailsModalProps> = ({
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.habitHeader}>
-              <MaterialCommunityIcons
-                name={(habit.icon as any) || 'check-circle-outline'}
-                size={20}
-                color={palette.accent}
-              />
+              <View
+                style={[
+                  styles.iconWrap,
+                  { backgroundColor: `${palette.accent}20`, borderColor: `${palette.accent}40` },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name={(habit.icon as any) || 'check-circle-outline'}
+                  size={18}
+                  color={palette.accent}
+                />
+              </View>
               <Text style={styles.habitName} numberOfLines={1}>
                 {habit.name}
               </Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <MaterialCommunityIcons name="close" size={20} color="#8b949e" />
+              <MaterialCommunityIcons name="close" size={20} color="#94A3B8" />
             </TouchableOpacity>
           </View>
 
           {/* Date info */}
           <Text style={styles.dateLabel}>{formatDisplayDate(date)}</Text>
           <Text style={styles.instruction}>
-            Select pixel intensity or complete this day:
+            Choose intensity for this day:
           </Text>
 
           {/* Intensity selector blocks */}
@@ -82,10 +89,10 @@ export const DayDetailsModal: React.FC<DayDetailsModalProps> = ({
                   <Text
                     style={[
                       styles.intensityNum,
-                      { color: lvl === 0 ? '#6e7681' : lvl >= 3 ? '#ffffff' : '#e6edf3' },
+                      { color: lvl === 0 ? '#64748B' : '#FFFFFF' },
                     ]}
                   >
-                    {lvl}
+                    {lvl === 0 ? '0' : lvl}
                   </Text>
                 </TouchableOpacity>
               );
@@ -93,9 +100,9 @@ export const DayDetailsModal: React.FC<DayDetailsModalProps> = ({
           </View>
 
           <View style={styles.statusRow}>
-            <Text style={styles.statusLabel}>Current Intensity:</Text>
+            <Text style={styles.statusLabel}>Selected Level:</Text>
             <Text style={[styles.statusValue, { color: palette.accent }]}>
-              {levelLabels[level] || 'None'} ({level}/4)
+              {levelLabels[level] || 'Rest'}
             </Text>
           </View>
 
@@ -104,7 +111,7 @@ export const DayDetailsModal: React.FC<DayDetailsModalProps> = ({
             <TouchableOpacity
               style={[
                 styles.toggleBtn,
-                level > 0 ? styles.toggleBtnActive : styles.toggleBtnEmpty,
+                level > 0 ? styles.toggleBtnActive : [styles.toggleBtnEmpty, { backgroundColor: palette.accent }],
               ]}
               onPress={() => {
                 onSelectLevel(level > 0 ? 0 : 4);
@@ -114,12 +121,12 @@ export const DayDetailsModal: React.FC<DayDetailsModalProps> = ({
               <MaterialCommunityIcons
                 name={level > 0 ? 'close-circle-outline' : 'check-circle-outline'}
                 size={18}
-                color={level > 0 ? '#f85149' : '#ffffff'}
+                color={level > 0 ? '#F43F5E' : '#0B0F19'}
               />
               <Text
                 style={[
                   styles.toggleBtnText,
-                  { color: level > 0 ? '#f85149' : '#ffffff' },
+                  { color: level > 0 ? '#F43F5E' : '#0B0F19' },
                 ]}
               >
                 {level > 0 ? 'Clear This Day' : 'Mark Completed (Level 4)'}
@@ -135,16 +142,16 @@ export const DayDetailsModal: React.FC<DayDetailsModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: 'rgba(0, 0, 0, 0.78)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   content: {
-    backgroundColor: '#161b22',
-    borderRadius: 16,
+    backgroundColor: '#121622',
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: '#30363d',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     width: '100%',
     maxWidth: 380,
     padding: 20,
@@ -153,33 +160,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   habitHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     flex: 1,
   },
+  iconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   habitName: {
-    color: '#c9d1d9',
-    fontSize: 15,
-    fontWeight: '600',
+    color: '#E2E8F0',
+    fontSize: 16,
+    fontWeight: '700',
     flex: 1,
   },
   closeBtn: {
     padding: 4,
   },
   dateLabel: {
-    color: '#f0f6fc',
-    fontSize: 20,
+    color: '#FFFFFF',
+    fontSize: 22,
     fontWeight: '800',
-    marginTop: 4,
+    marginTop: 6,
   },
   instruction: {
-    color: '#8b949e',
+    color: '#94A3B8',
     fontSize: 13,
-    marginTop: 6,
+    marginTop: 4,
     marginBottom: 16,
   },
   intensityRow: {
@@ -191,18 +206,18 @@ const styles = StyleSheet.create({
   intensityBox: {
     flex: 1,
     aspectRatio: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: '#30363d',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   intensityBoxSelected: {
     borderWidth: 2.5,
-    transform: [{ scale: 1.05 }],
+    transform: [{ scale: 1.06 }],
   },
   intensityNum: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
   },
   statusRow: {
@@ -210,17 +225,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 14,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#21262d',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   statusLabel: {
-    color: '#8b949e',
+    color: '#64748B',
     fontSize: 13,
   },
   statusValue: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   actions: {
@@ -230,20 +245,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 13,
+    borderRadius: 14,
     gap: 8,
   },
-  toggleBtnEmpty: {
-    backgroundColor: '#238636',
-  },
+  toggleBtnEmpty: {},
   toggleBtnActive: {
-    backgroundColor: 'rgba(248, 81, 73, 0.15)',
-    borderWidth: 1,
-    borderColor: '#f85149',
+    backgroundColor: 'rgba(244, 63, 94, 0.12)',
+    borderWidth: 1.5,
+    borderColor: '#F43F5E',
   },
   toggleBtnText: {
-    fontWeight: '700',
+    fontWeight: '800',
     fontSize: 14,
   },
 });

@@ -14,17 +14,16 @@ export const FlameStreak: React.FC<FlameStreakProps> = ({ streak, size = 'medium
 
   useEffect(() => {
     if (streak > 0) {
-      // Gentle pulsing animation for active streak
       const animation = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
-            toValue: 1.12,
-            duration: 800,
+            toValue: 1.15,
+            duration: 700,
             useNativeDriver: true,
           }),
           Animated.timing(pulseAnim, {
             toValue: 1,
-            duration: 800,
+            duration: 700,
             useNativeDriver: true,
           }),
         ])
@@ -36,19 +35,39 @@ export const FlameStreak: React.FC<FlameStreakProps> = ({ streak, size = 'medium
     }
   }, [streak]);
 
-  const iconSize = size === 'small' ? 14 : size === 'large' ? 24 : 18;
-  const fontSize = size === 'small' ? 12 : size === 'large' ? 18 : 14;
+  const iconSize = size === 'small' ? 14 : size === 'large' ? 22 : 16;
+  const fontSize = size === 'small' ? 12 : size === 'large' ? 18 : 13;
+
+  const isActive = streak > 0;
 
   return (
-    <View style={[styles.container, streak === 0 && styles.containerInactive]}>
-      <Animated.View style={{ transform: [{ scale: streak > 0 ? pulseAnim : 1 }] }}>
+    <View
+      style={[
+        styles.container,
+        isActive
+          ? {
+              backgroundColor: `${tier.color}15`,
+              borderColor: `${tier.color}35`,
+            }
+          : styles.containerInactive,
+      ]}
+    >
+      <Animated.View style={{ transform: [{ scale: isActive ? pulseAnim : 1 }] }}>
         <MaterialCommunityIcons
-          name={streak > 0 ? 'fire' : 'fire-off'}
+          name={isActive ? 'fire' : 'fire-off'}
           size={iconSize}
-          color={tier.color}
+          color={isActive ? tier.color : '#64748B'}
         />
       </Animated.View>
-      <Text style={[styles.streakCount, { fontSize, color: tier.color }]}>
+      <Text
+        style={[
+          styles.streakCount,
+          {
+            fontSize,
+            color: isActive ? tier.color : '#64748B',
+          },
+        ]}
+      >
         {streak}
       </Text>
       {size === 'large' && (
@@ -62,15 +81,14 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   containerInactive: {
-    opacity: 0.5,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderColor: 'rgba(255, 255, 255, 0.07)',
   },
   streakCount: {
     fontWeight: '800',

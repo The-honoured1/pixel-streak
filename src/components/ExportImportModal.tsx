@@ -18,11 +18,10 @@ interface ExportImportModalProps {
 }
 
 export const ExportImportModal: React.FC<ExportImportModalProps> = ({ visible, onClose }) => {
-  const { exportData, importData, resetData } = useHabits();
+  const { exportData, importData, resetData, clearAllData } = useHabits();
   const [tab, setTab] = useState<'export' | 'import'>('export');
   const [exportJson, setExportJson] = useState('');
   const [importJsonText, setImportJsonText] = useState('');
-  const [copiedNotification, setCopiedNotification] = useState(false);
 
   const handleOpenExport = async () => {
     const data = await exportData();
@@ -34,7 +33,6 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({ visible, o
     if (visible) {
       handleOpenExport();
       setImportJsonText('');
-      setCopiedNotification(false);
     }
   }, [visible]);
 
@@ -46,7 +44,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({ visible, o
 
     Alert.alert(
       'Confirm Import',
-      'This will replace or update your current habit data. Proceed?',
+      'This will replace your current habit data with the imported data. Proceed?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -54,7 +52,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({ visible, o
           onPress: async () => {
             const res = await importData(importJsonText.trim());
             if (res.success) {
-              Alert.alert('Success', 'Habit data imported successfully!');
+              Alert.alert('Success', 'Habits imported successfully!');
               onClose();
             } else {
               Alert.alert('Import Failed', res.error || 'Invalid JSON format');
@@ -65,18 +63,36 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({ visible, o
     );
   };
 
-  const handleResetDemoData = () => {
+  const handleClearAll = () => {
     Alert.alert(
-      'Reset Demo Data',
-      'This will replace your current habits with fresh demo data containing realistic streak matrices. Continue?',
+      'Wipe All Data',
+      'Are you sure you want to delete all habits and history for a completely clean fresh start?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Reset to Demo',
+          text: 'Wipe Everything',
           style: 'destructive',
           onPress: async () => {
+            await clearAllData();
+            Alert.alert('Cleared', 'All habits have been wiped clean.');
+            onClose();
+          },
+        },
+      ]
+    );
+  };
+
+  const handleResetStarters = () => {
+    Alert.alert(
+      'Load Clean Starters',
+      'This will set up clean starter habits with zero past records so you start on Day 1.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Load Starters',
+          onPress: async () => {
             await resetData();
-            Alert.alert('Data Reset', 'Demo data loaded successfully!');
+            Alert.alert('Done', 'Clean starter habits loaded.');
             onClose();
           },
         },
@@ -96,11 +112,11 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({ visible, o
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.titleRow}>
-              <MaterialCommunityIcons name="database-cog-outline" size={22} color="#38bdf8" />
-              <Text style={styles.title}>Data Management</Text>
+              <MaterialCommunityIcons name="cog-outline" size={22} color="#38BDF8" />
+              <Text style={styles.title}>Settings & Data</Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <MaterialCommunityIcons name="close" size={22} color="#8b949e" />
+              <MaterialCommunityIcons name="close" size={22} color="#94A3B8" />
             </TouchableOpacity>
           </View>
 
@@ -128,59 +144,64 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({ visible, o
             {tab === 'export' ? (
               <View>
                 <Text style={styles.description}>
-                  All your habit matrix data is stored locally on this device. You can copy the raw JSON backup below to restore anytime.
+                  All your habit data is stored locally on this device. You can copy the JSON backup below to save or transfer anytime.
                 </Text>
 
-                <View style={styles.boxHeader}>
-                  <Text style={styles.boxLabel}>Export JSON</Text>
-                  {copiedNotification && (
-                    <Text style={styles.copiedText}>Copied to clipboard!</Text>
-                  )}
-                </View>
-
+                <Text style={styles.boxLabel}>Exported JSON Payload</Text>
                 <TextInput
                   style={styles.jsonBox}
                   value={exportJson}
                   editable={false}
                   multiline
-                  numberOfLines={10}
+                  numberOfLines={8}
                   selectTextOnFocus
                 />
               </View>
             ) : (
               <View>
                 <Text style={styles.description}>
-                  Paste your previously exported Pixel Streak JSON backup below to restore your habits and check-in history.
+                  Paste your previously exported Pixel Streak JSON backup below to restore your habits.
                 </Text>
 
-                <Text style={styles.boxLabel}>Paste JSON here</Text>
+                <Text style={styles.boxLabel}>Paste Backup JSON</Text>
                 <TextInput
                   style={[styles.jsonBox, styles.jsonBoxEditable]}
-                  placeholder='{"version": "1.0", "habits": [...]}'
-                  placeholderTextColor="#6e7681"
+                  placeholder='{"appName": "Pixel Streak", "habits": [...]}'
+                  placeholderTextColor="#64748B"
                   value={importJsonText}
                   onChangeText={setImportJsonText}
                   multiline
-                  numberOfLines={10}
+                  numberOfLines={8}
                   textAlignVertical="top"
                 />
 
                 <TouchableOpacity style={styles.importBtn} onPress={handleImport}>
-                  <MaterialCommunityIcons name="upload" size={18} color="#ffffff" />
+                  <MaterialCommunityIcons name="cloud-upload-outline" size={18} color="#0B0F19" />
                   <Text style={styles.importBtnText}>Restore from JSON</Text>
                 </TouchableOpacity>
               </View>
             )}
 
-            {/* Reset to demo data button */}
+            {/* Quick Clean Actions */}
             <View style={styles.dangerZone}>
-              <Text style={styles.dangerTitle}>Quick Actions</Text>
+              <Text style={styles.dangerTitle}>Data Reset & Management</Text>
+
               <TouchableOpacity
-                style={styles.demoResetBtn}
-                onPress={handleResetDemoData}
+                style={styles.cleanStartersBtn}
+                onPress={handleResetStarters}
+                activeOpacity={0.7}
               >
-                <MaterialCommunityIcons name="refresh" size={18} color="#ff7b00" />
-                <Text style={styles.demoResetText}>Reload Rich Demo Habits & Streaks</Text>
+                <MaterialCommunityIcons name="creation-outline" size={18} color="#38BDF8" />
+                <Text style={styles.cleanStartersText}>Load Clean Starter Habits (0 Records)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.wipeBtn}
+                onPress={handleClearAll}
+                activeOpacity={0.7}
+              >
+                <MaterialCommunityIcons name="trash-can-outline" size={18} color="#F43F5E" />
+                <Text style={styles.wipeBtnText}>Wipe All Habits (Start Empty)</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -188,7 +209,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({ visible, o
           {/* Footer */}
           <View style={styles.footer}>
             <TouchableOpacity style={styles.doneBtn} onPress={onClose}>
-              <Text style={styles.doneBtnText}>Done</Text>
+              <Text style={styles.doneBtnText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -200,17 +221,17 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({ visible, o
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    backgroundColor: 'rgba(0, 0, 0, 0.78)',
     justifyContent: 'flex-end',
   },
   container: {
-    backgroundColor: '#161b22',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: '#121622',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderWidth: 1,
-    borderColor: '#30363d',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     maxHeight: '85%',
-    paddingBottom: 20,
+    paddingBottom: 24,
   },
   header: {
     flexDirection: 'row',
@@ -220,7 +241,7 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#30363d',
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
   },
   titleRow: {
     flexDirection: 'row',
@@ -228,7 +249,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    color: '#f0f6fc',
+    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
   },
@@ -238,7 +259,7 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#30363d',
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
   },
   tabItem: {
     flex: 1,
@@ -247,113 +268,124 @@ const styles = StyleSheet.create({
   },
   tabItemActive: {
     borderBottomWidth: 2,
-    borderBottomColor: '#38bdf8',
+    borderBottomColor: '#38BDF8',
   },
   tabText: {
-    color: '#8b949e',
+    color: '#64748B',
     fontSize: 13,
     fontWeight: '600',
   },
   tabTextActive: {
-    color: '#38bdf8',
+    color: '#38BDF8',
+    fontWeight: '700',
   },
   body: {
     paddingHorizontal: 20,
     paddingTop: 16,
   },
   description: {
-    color: '#8b949e',
+    color: '#94A3B8',
     fontSize: 13,
     lineHeight: 18,
     marginBottom: 14,
   },
-  boxHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  boxLabel: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: 6,
   },
-  boxLabel: {
-    color: '#c9d1d9',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  copiedText: {
-    color: '#39d353',
-    fontSize: 12,
-    fontWeight: '600',
-  },
   jsonBox: {
-    backgroundColor: '#0d1117',
-    borderRadius: 8,
+    backgroundColor: '#181E2C',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#30363d',
-    color: '#8b949e',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    color: '#94A3B8',
     padding: 12,
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'monospace',
-    maxHeight: 180,
+    maxHeight: 160,
   },
   jsonBoxEditable: {
-    color: '#f0f6fc',
-    marginTop: 6,
+    color: '#FFFFFF',
   },
   importBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1f6feb',
+    backgroundColor: '#38BDF8',
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 12,
     marginTop: 12,
     gap: 8,
   },
   importBtnText: {
-    color: '#ffffff',
-    fontWeight: '700',
+    color: '#0B0F19',
+    fontWeight: '800',
     fontSize: 14,
   },
   dangerZone: {
-    marginTop: 20,
+    marginTop: 22,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#21262d',
-    marginBottom: 20,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+    marginBottom: 16,
+    gap: 10,
   },
   dangerTitle: {
-    color: '#8b949e',
+    color: '#94A3B8',
     fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 8,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
-  demoResetBtn: {
+  cleanStartersBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(255, 123, 0, 0.1)',
+    backgroundColor: 'rgba(56, 189, 248, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 123, 0, 0.3)',
-    paddingVertical: 10,
+    borderColor: 'rgba(56, 189, 248, 0.25)',
+    paddingVertical: 12,
     paddingHorizontal: 14,
-    borderRadius: 8,
+    borderRadius: 12,
   },
-  demoResetText: {
-    color: '#ff7b00',
+  cleanStartersText: {
+    color: '#38BDF8',
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  wipeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(244, 63, 94, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(244, 63, 94, 0.25)',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+  },
+  wipeBtnText: {
+    color: '#F43F5E',
+    fontSize: 13,
+    fontWeight: '700',
   },
   footer: {
     paddingHorizontal: 20,
     paddingTop: 10,
   },
   doneBtn: {
-    backgroundColor: '#21262d',
-    paddingVertical: 12,
-    borderRadius: 8,
+    backgroundColor: '#1E2536',
+    paddingVertical: 13,
+    borderRadius: 12,
     alignItems: 'center',
   },
   doneBtnText: {
-    color: '#f0f6fc',
+    color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 14,
   },
