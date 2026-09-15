@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -8,11 +8,16 @@ import { HabitProvider } from './src/context/HabitContext';
 import { HabitsScreen } from './src/screens/HabitsScreen';
 import { CanvasScreen } from './src/screens/CanvasScreen';
 import { StatsScreen } from './src/screens/StatsScreen';
+import { initNotifications } from './src/services/notificationService';
 
 type Tab = 'habits' | 'canvas' | 'stats';
 
 function MainApp() {
   const [activeTab, setActiveTab] = useState<Tab>('habits');
+
+  useEffect(() => {
+    initNotifications();
+  }, []);
 
   const switchTab = async (tab: Tab) => {
     setActiveTab(tab);

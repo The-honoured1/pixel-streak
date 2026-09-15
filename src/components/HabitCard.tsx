@@ -75,6 +75,11 @@ export const HabitCard: React.FC<HabitCardProps> = ({
             <Text style={styles.habitName} numberOfLines={1}>
               {habit.name}
             </Text>
+            {!!habit.description && (
+              <Text style={styles.habitDesc} numberOfLines={1}>
+                {habit.description}
+              </Text>
+            )}
             <View style={styles.streakRow}>
               <FlameStreak streak={stats.currentStreak} size="small" />
               {stats.longestStreak > 0 && (
@@ -188,6 +193,12 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: -0.3,
+  },
+  habitDesc: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 2,
   },
   streakRow: {
     flexDirection: 'row',
