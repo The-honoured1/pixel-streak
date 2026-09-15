@@ -65,7 +65,6 @@ export async function scheduleHabitReminder(
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
         hour,
         minute,
-        repeats: true,
       },
     });
     return identifier;

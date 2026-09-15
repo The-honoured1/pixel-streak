@@ -125,185 +125,185 @@ export const CanvasScreen: React.FC = () => {
           <>
             {/* Habit Source Selector */}
             <Text style={styles.sectionTitle}>Canvas Stream</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
-          <TouchableOpacity
-            style={[
-              styles.chip,
-              selectedHabitId === 'all' && [styles.chipActive, { borderColor: activePalette.accent }],
-            ]}
-            onPress={() => setSelectedHabitId('all')}
-          >
-            <MaterialCommunityIcons
-              name="layers-triple-outline"
-              size={15}
-              color={selectedHabitId === 'all' ? activePalette.accent : '#64748B'}
-            />
-            <Text
-              style={[
-                styles.chipText,
-                selectedHabitId === 'all' && [styles.chipTextActive, { color: activePalette.accent }],
-              ]}
-            >
-              All Habits ({activeHabits.length})
-            </Text>
-          </TouchableOpacity>
-
-          {activeHabits.map(h => (
-            <TouchableOpacity
-              key={h.id}
-              style={[
-                styles.chip,
-                selectedHabitId === h.id && [styles.chipActive, { borderColor: activePalette.accent }],
-              ]}
-              onPress={() => setSelectedHabitId(h.id)}
-            >
-              <MaterialCommunityIcons
-                name={(h.icon as any) || 'check'}
-                size={15}
-                color={selectedHabitId === h.id ? activePalette.accent : '#64748B'}
-              />
-              <Text
-                style={[
-                  styles.chipText,
-                  selectedHabitId === h.id && [styles.chipTextActive, { color: activePalette.accent }],
-                ]}
-              >
-                {h.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* View Span Selector (30d, 90d, 180d, 1y) */}
-        <View style={styles.controlsRow}>
-          <Text style={styles.sectionTitle}>Time Frame</Text>
-          <View style={styles.spanSelector}>
-            {(['30days', '90days', '180days', 'year'] as ViewSpan[]).map(span => (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
               <TouchableOpacity
-                key={span}
                 style={[
-                  styles.spanBtn,
-                  selectedSpan === span && styles.spanBtnActive,
+                  styles.chip,
+                  selectedHabitId === 'all' && [styles.chipActive, { borderColor: activePalette.accent }],
                 ]}
-                onPress={() => setSelectedSpan(span)}
+                onPress={() => setSelectedHabitId('all')}
               >
+                <MaterialCommunityIcons
+                  name="layers-triple-outline"
+                  size={15}
+                  color={selectedHabitId === 'all' ? activePalette.accent : '#64748B'}
+                />
                 <Text
                   style={[
-                    styles.spanBtnText,
-                    selectedSpan === span && styles.spanBtnTextActive,
+                    styles.chipText,
+                    selectedHabitId === 'all' && [styles.chipTextActive, { color: activePalette.accent }],
                   ]}
                 >
-                  {span === '30days'
-                    ? '30D'
-                    : span === '90days'
-                    ? '90D'
-                    : span === '180days'
-                    ? '180D'
-                    : '1 YEAR'}
+                  All Habits ({activeHabits.length})
                 </Text>
               </TouchableOpacity>
-            ))}
-          </View>
-        </View>
 
-        {/* The Big Canvas Card */}
-        <View style={styles.canvasCard}>
-          <View style={styles.canvasHeader}>
-            <View style={styles.canvasTitleGroup}>
-              <View
-                style={[
-                  styles.canvasIconCircle,
-                  { backgroundColor: `${activePalette.accent}18` },
-                ]}
-              >
-                <MaterialCommunityIcons name="view-grid" size={16} color={activePalette.accent} />
+              {activeHabits.map(h => (
+                <TouchableOpacity
+                  key={h.id}
+                  style={[
+                    styles.chip,
+                    selectedHabitId === h.id && [styles.chipActive, { borderColor: activePalette.accent }],
+                  ]}
+                  onPress={() => setSelectedHabitId(h.id)}
+                >
+                  <MaterialCommunityIcons
+                    name={(h.icon as any) || 'check'}
+                    size={15}
+                    color={selectedHabitId === h.id ? activePalette.accent : '#64748B'}
+                  />
+                  <Text
+                    style={[
+                      styles.chipText,
+                      selectedHabitId === h.id && [styles.chipTextActive, { color: activePalette.accent }],
+                    ]}
+                  >
+                    {h.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* View Span Selector (30d, 90d, 180d, 1y) */}
+            <View style={styles.controlsRow}>
+              <Text style={styles.sectionTitle}>Time Frame</Text>
+              <View style={styles.spanSelector}>
+                {(['30days', '90days', '180days', 'year'] as ViewSpan[]).map(span => (
+                  <TouchableOpacity
+                    key={span}
+                    style={[
+                      styles.spanBtn,
+                      selectedSpan === span && styles.spanBtnActive,
+                    ]}
+                    onPress={() => setSelectedSpan(span)}
+                  >
+                    <Text
+                      style={[
+                        styles.spanBtnText,
+                        selectedSpan === span && styles.spanBtnTextActive,
+                      ]}
+                    >
+                      {span === '30days'
+                        ? '30D'
+                        : span === '90days'
+                        ? '90D'
+                        : span === '180days'
+                        ? '180D'
+                        : '1 YEAR'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-              <Text style={styles.canvasTitle}>
-                {selectedHabitId === 'all' ? 'Life Activity Matrix' : 'Habit Streak Matrix'}
-              </Text>
             </View>
-            <Text style={styles.canvasSubtitle}>Tap pixel to inspect</Text>
-          </View>
 
-          {/* Heatmap Grid */}
-          <View style={styles.gridWrapper}>
-            <PixelGrid
-              records={compositeRecords}
-              paletteKey={
-                selectedHabitId !== 'all'
-                  ? activeHabits.find(h => h.id === selectedHabitId)?.palette || globalPalette
-                  : globalPalette
-              }
-              span={selectedSpan}
-              squareSize={14}
-              gap={3.5}
-              showLegend={true}
-              showDayLabels={true}
-              onDayPress={handlePixelPress}
-            />
-          </View>
-        </View>
-
-        {/* Palette Theme Chooser */}
-        <Text style={styles.sectionTitle}>Palette Themes</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.palettesList}>
-          {(Object.keys(PALETTES) as PaletteKey[]).map(key => {
-            const pal = PALETTES[key];
-            const isSelected = globalPalette === key;
-            return (
-              <TouchableOpacity
-                key={key}
-                style={[
-                  styles.themeButton,
-                  isSelected && { borderColor: pal.accent, backgroundColor: 'rgba(255,255,255,0.06)' },
-                ]}
-                onPress={() => setGlobalPalette(key)}
-              >
-                <View style={styles.themeDotRow}>
-                  {pal.levels.slice(1).map((lvlColor, idx) => (
-                    <View
-                      key={idx}
-                      style={[styles.themeDot, { backgroundColor: lvlColor }]}
-                    />
-                  ))}
+            {/* The Big Canvas Card */}
+            <View style={styles.canvasCard}>
+              <View style={styles.canvasHeader}>
+                <View style={styles.canvasTitleGroup}>
+                  <View
+                    style={[
+                      styles.canvasIconCircle,
+                      { backgroundColor: `${activePalette.accent}18` },
+                    ]}
+                  >
+                    <MaterialCommunityIcons name="view-grid" size={16} color={activePalette.accent} />
+                  </View>
+                  <Text style={styles.canvasTitle}>
+                    {selectedHabitId === 'all' ? 'Life Activity Matrix' : 'Habit Streak Matrix'}
+                  </Text>
                 </View>
-                <Text
-                  style={[
-                    styles.themeName,
-                    isSelected && { color: pal.accent, fontWeight: '700' },
-                  ]}
-                >
-                  {pal.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+                <Text style={styles.canvasSubtitle}>Tap pixel to inspect</Text>
+              </View>
 
-        {/* Matrix Insights Metrics */}
-        <View style={styles.insightsCard}>
-          <Text style={styles.insightsTitle}>Canvas Metrics</Text>
-          <View style={styles.metricsGrid}>
-            <View style={styles.metricItem}>
-              <Text style={styles.metricNumber}>{canvasStats.totalCompletedDays}</Text>
-              <Text style={styles.metricLabel}>Active Days</Text>
+              {/* Heatmap Grid */}
+              <View style={styles.gridWrapper}>
+                <PixelGrid
+                  records={compositeRecords}
+                  paletteKey={
+                    selectedHabitId !== 'all'
+                      ? activeHabits.find(h => h.id === selectedHabitId)?.palette || globalPalette
+                      : globalPalette
+                  }
+                  span={selectedSpan}
+                  squareSize={14}
+                  gap={3.5}
+                  showLegend={true}
+                  showDayLabels={true}
+                  onDayPress={handlePixelPress}
+                />
+              </View>
             </View>
-            <View style={styles.metricItem}>
-              <Text style={[styles.metricNumber, { color: activePalette.accent }]}>
-                {canvasStats.totalScore}
-              </Text>
-              <Text style={styles.metricLabel}>Total Pixels</Text>
+
+            {/* Palette Theme Chooser */}
+            <Text style={styles.sectionTitle}>Palette Themes</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.palettesList}>
+              {(Object.keys(PALETTES) as PaletteKey[]).map(key => {
+                const pal = PALETTES[key];
+                const isSelected = globalPalette === key;
+                return (
+                  <TouchableOpacity
+                    key={key}
+                    style={[
+                      styles.themeButton,
+                      isSelected && { borderColor: pal.accent, backgroundColor: 'rgba(255,255,255,0.06)' },
+                    ]}
+                    onPress={() => setGlobalPalette(key)}
+                  >
+                    <View style={styles.themeDotRow}>
+                      {pal.levels.slice(1).map((lvlColor, idx) => (
+                        <View
+                          key={idx}
+                          style={[styles.themeDot, { backgroundColor: lvlColor }]}
+                        />
+                      ))}
+                    </View>
+                    <Text
+                      style={[
+                        styles.themeName,
+                        isSelected && { color: pal.accent, fontWeight: '700' },
+                      ]}
+                    >
+                      {pal.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            {/* Matrix Insights Metrics */}
+            <View style={styles.insightsCard}>
+              <Text style={styles.insightsTitle}>Canvas Metrics</Text>
+              <View style={styles.metricsGrid}>
+                <View style={styles.metricItem}>
+                  <Text style={styles.metricNumber}>{canvasStats.totalCompletedDays}</Text>
+                  <Text style={styles.metricLabel}>Active Days</Text>
+                </View>
+                <View style={styles.metricItem}>
+                  <Text style={[styles.metricNumber, { color: activePalette.accent }]}>
+                    {canvasStats.totalScore}
+                  </Text>
+                  <Text style={styles.metricLabel}>Total Pixels</Text>
+                </View>
+                <View style={styles.metricItem}>
+                  <Text style={styles.metricNumber}>
+                    {activeHabits.length}
+                  </Text>
+                  <Text style={styles.metricLabel}>Habits Tracked</Text>
+                </View>
+              </View>
             </View>
-            <View style={styles.metricItem}>
-              <Text style={styles.metricNumber}>
-                {activeHabits.length}
-              </Text>
-              <Text style={styles.metricLabel}>Habits Tracked</Text>
-            </View>
-          </View>
-        </View>
-        </>
-      )}
+          </>
+        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -362,6 +362,33 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 36,
+    paddingVertical: 72,
+  },
+  emptyIconCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
+  },
+  emptyTitle: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    color: '#64748B',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 21,
   },
   sectionTitle: {
     color: '#64748B',

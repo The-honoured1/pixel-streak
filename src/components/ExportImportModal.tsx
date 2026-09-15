@@ -18,7 +18,7 @@ interface ExportImportModalProps {
 }
 
 export const ExportImportModal: React.FC<ExportImportModalProps> = ({ visible, onClose }) => {
-  const { exportData, importData, resetData, clearAllData } = useHabits();
+  const { exportData, importData, resetData, clearAllData, loadStarterHabits } = useHabits();
   const [tab, setTab] = useState<'export' | 'import'>('export');
   const [exportJson, setExportJson] = useState('');
   const [importJsonText, setImportJsonText] = useState('');
@@ -84,15 +84,15 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({ visible, o
 
   const handleResetStarters = () => {
     Alert.alert(
-      'Load Clean Starters',
-      'This will set up clean starter habits with zero past records so you start on Day 1.',
+      'Load Starter Habits',
+      'This will replace all your current habits with 5 clean starter templates (zero past records). Your existing data will be lost.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Load Starters',
           onPress: async () => {
-            await resetData();
-            Alert.alert('Done', 'Clean starter habits loaded.');
+            await loadStarterHabits();
+            Alert.alert('Done', '5 starter habits loaded. Start your day at Day 1!');
             onClose();
           },
         },

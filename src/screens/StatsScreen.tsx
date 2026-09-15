@@ -118,6 +118,30 @@ export const StatsScreen: React.FC = () => {
 
   const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
+  if (activeHabits.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View>
+            <View style={styles.headerTag}>
+              <Text style={styles.headerTagText}>PERFORMANCE</Text>
+            </View>
+            <Text style={styles.headerTitle}>Analytics</Text>
+          </View>
+        </View>
+        <View style={styles.emptyContainer}>
+          <View style={styles.emptyIconCircle}>
+            <MaterialCommunityIcons name="chart-box-outline" size={32} color="#F97316" />
+          </View>
+          <Text style={styles.emptyTitle}>No data yet</Text>
+          <Text style={styles.emptySubtitle}>
+            Add habits on the Streaks tab and start checking in — your analytics will appear here.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -355,6 +379,36 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 36,
+    paddingVertical: 60,
+  },
+  emptyIconCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: 'rgba(249, 115, 22, 0.12)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(249, 115, 22, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
+  },
+  emptyTitle: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    color: '#64748B',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 21,
   },
   kpiRow: {
     flexDirection: 'row',
